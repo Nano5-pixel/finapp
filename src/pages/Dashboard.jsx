@@ -83,7 +83,7 @@ export default function Dashboard() {
 
   return (
     <div style={{ backgroundColor: "#0F0F0F", minHeight: "100vh" }}>
-      <div style={{ maxWidth: "480px", margin: "0 auto", padding: "0 16px 80px 16px" }}>
+      <div style={{ maxWidth: "480px", margin: "0 auto", padding: "0 16px 140px 16px" }}>
 
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "24px", paddingBottom: "16px" }}>
@@ -174,16 +174,16 @@ export default function Dashboard() {
       {/* Botón + flotante */}
       <button
         onClick={() => { setSugerencia(null); setForm({ type: "expense", concept: "", amount: "", category: "Otros" }); setShowForm(true); }}
-        style={{ position: "fixed", bottom: "24px", right: "24px", width: "56px", height: "56px", borderRadius: "50%", backgroundColor: "#10B981", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(16,185,129,0.4)" }}
+        style={{ position: "fixed", bottom: "80px", right: "24px", width: "56px", height: "56px", borderRadius: "50%", backgroundColor: "#10B981", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(16,185,129,0.4)" }}
       >
         <Plus size={24} color="white" />
       </button>
 
       {/* Modal formulario */}
       {showForm && (
-        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.75)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.75)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 200 }}>
           <div style={{ width: "100%", maxWidth: "480px", backgroundColor: "#1C1C1E", borderRadius: "24px 24px 0 0", padding: "24px" }}>
-            
+
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <h3 style={{ color: "white", fontSize: "18px", fontWeight: "600", margin: 0 }}>
                 {sugerencia ? "✨ Revisá el registro" : "Nuevo registro"}
@@ -193,22 +193,12 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {/* Selector de tipo */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "8px", marginBottom: "16px" }}>
               {Object.entries(TIPOS).map(([key, val]) => (
                 <button
                   key={key}
                   onClick={() => setForm({ ...form, type: key })}
-                  style={{
-                    padding: "8px 4px",
-                    borderRadius: "12px",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: "11px",
-                    fontWeight: "600",
-                    backgroundColor: form.type === key ? val.color : "#2D2D2D",
-                    color: form.type === key ? "white" : "#9CA3AF"
-                  }}
+                  style={{ padding: "8px 4px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "11px", fontWeight: "600", backgroundColor: form.type === key ? val.color : "#2D2D2D", color: form.type === key ? "white" : "#9CA3AF" }}
                 >
                   {val.label}
                 </button>
