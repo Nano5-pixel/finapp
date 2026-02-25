@@ -6,7 +6,8 @@ import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
 import History from "./pages/History";
 import Budget from "./pages/Budget";
-import { LayoutDashboard, BarChart2, BookOpen, Target } from "lucide-react";
+import Recurring from "./pages/Recurring";
+import { LayoutDashboard, BarChart2, BookOpen, Target, RefreshCw } from "lucide-react";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -37,6 +38,7 @@ function App() {
       {page === "reports" && <Reports />}
       {page === "history" && <History />}
       {page === "budget" && <Budget />}
+      {page === "recurring" && <Recurring />}
 
       {/* Barra de navegación inferior */}
       <div style={{
@@ -52,26 +54,31 @@ function App() {
         padding: "10px 0 20px 0",
         zIndex: 100
       }}>
-        <div style={{ display: "flex", gap: "36px" }}>
+        <div style={{ display: "flex", gap: "28px" }}>
           <button onClick={() => setPage("dashboard")}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
             <LayoutDashboard size={22} color={page === "dashboard" ? "#10B981" : "#6B7280"} />
-            <span style={{ fontSize: "10px", color: page === "dashboard" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Inicio</span>
+            <span style={{ fontSize: "9px", color: page === "dashboard" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Inicio</span>
           </button>
           <button onClick={() => setPage("reports")}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
             <BarChart2 size={22} color={page === "reports" ? "#10B981" : "#6B7280"} />
-            <span style={{ fontSize: "10px", color: page === "reports" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Reportes</span>
+            <span style={{ fontSize: "9px", color: page === "reports" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Reportes</span>
           </button>
           <button onClick={() => setPage("budget")}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
             <Target size={22} color={page === "budget" ? "#10B981" : "#6B7280"} />
-            <span style={{ fontSize: "10px", color: page === "budget" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Presupuesto</span>
+            <span style={{ fontSize: "9px", color: page === "budget" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Presupuesto</span>
+          </button>
+          <button onClick={() => setPage("recurring")}
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
+            <RefreshCw size={22} color={page === "recurring" ? "#10B981" : "#6B7280"} />
+            <span style={{ fontSize: "9px", color: page === "recurring" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Recurrentes</span>
           </button>
           <button onClick={() => setPage("history")}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
             <BookOpen size={22} color={page === "history" ? "#10B981" : "#6B7280"} />
-            <span style={{ fontSize: "10px", color: page === "history" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Historial</span>
+            <span style={{ fontSize: "9px", color: page === "history" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Historial</span>
           </button>
         </div>
       </div>
