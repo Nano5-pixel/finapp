@@ -4,7 +4,8 @@ import { onAuthStateChanged } from "firebase/auth";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
-import { LayoutDashboard, BarChart2 } from "lucide-react";
+import History from "./pages/History";
+import { LayoutDashboard, BarChart2, BookOpen } from "lucide-react";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -32,7 +33,8 @@ function App() {
   return (
     <div style={{ backgroundColor: "#0F0F0F", minHeight: "100vh" }}>
       {page === "dashboard" && <Dashboard />}
-      {page === "reports" && <Reports onBack={() => setPage("dashboard")} />}
+      {page === "reports" && <Reports />}
+      {page === "history" && <History />}
 
       {/* Barra de navegación inferior */}
       <div style={{
@@ -48,7 +50,7 @@ function App() {
         padding: "10px 0 20px 0",
         zIndex: 100
       }}>
-        <div style={{ display: "flex", gap: "64px" }}>
+        <div style={{ display: "flex", gap: "48px" }}>
           <button
             onClick={() => setPage("dashboard")}
             style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}
@@ -62,6 +64,13 @@ function App() {
           >
             <BarChart2 size={24} color={page === "reports" ? "#10B981" : "#6B7280"} />
             <span style={{ fontSize: "10px", color: page === "reports" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Reportes</span>
+          </button>
+          <button
+            onClick={() => setPage("history")}
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}
+          >
+            <BookOpen size={24} color={page === "history" ? "#10B981" : "#6B7280"} />
+            <span style={{ fontSize: "10px", color: page === "history" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Historial</span>
           </button>
         </div>
       </div>
