@@ -5,7 +5,8 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
 import History from "./pages/History";
-import { LayoutDashboard, BarChart2, BookOpen } from "lucide-react";
+import Budget from "./pages/Budget";
+import { LayoutDashboard, BarChart2, BookOpen, Target } from "lucide-react";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -35,6 +36,7 @@ function App() {
       {page === "dashboard" && <Dashboard />}
       {page === "reports" && <Reports />}
       {page === "history" && <History />}
+      {page === "budget" && <Budget />}
 
       {/* Barra de navegación inferior */}
       <div style={{
@@ -50,26 +52,25 @@ function App() {
         padding: "10px 0 20px 0",
         zIndex: 100
       }}>
-        <div style={{ display: "flex", gap: "48px" }}>
-          <button
-            onClick={() => setPage("dashboard")}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}
-          >
-            <LayoutDashboard size={24} color={page === "dashboard" ? "#10B981" : "#6B7280"} />
+        <div style={{ display: "flex", gap: "36px" }}>
+          <button onClick={() => setPage("dashboard")}
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+            <LayoutDashboard size={22} color={page === "dashboard" ? "#10B981" : "#6B7280"} />
             <span style={{ fontSize: "10px", color: page === "dashboard" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Inicio</span>
           </button>
-          <button
-            onClick={() => setPage("reports")}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}
-          >
-            <BarChart2 size={24} color={page === "reports" ? "#10B981" : "#6B7280"} />
+          <button onClick={() => setPage("reports")}
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+            <BarChart2 size={22} color={page === "reports" ? "#10B981" : "#6B7280"} />
             <span style={{ fontSize: "10px", color: page === "reports" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Reportes</span>
           </button>
-          <button
-            onClick={() => setPage("history")}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}
-          >
-            <BookOpen size={24} color={page === "history" ? "#10B981" : "#6B7280"} />
+          <button onClick={() => setPage("budget")}
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+            <Target size={22} color={page === "budget" ? "#10B981" : "#6B7280"} />
+            <span style={{ fontSize: "10px", color: page === "budget" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Presupuesto</span>
+          </button>
+          <button onClick={() => setPage("history")}
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+            <BookOpen size={22} color={page === "history" ? "#10B981" : "#6B7280"} />
             <span style={{ fontSize: "10px", color: page === "history" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Historial</span>
           </button>
         </div>

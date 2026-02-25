@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../lib/firebase";
 import { signOut } from "firebase/auth";
-import { collection, query, where, onSnapshot, addDoc, Timestamp } from "firebase/firestore";
-import { TrendingUp, TrendingDown, PiggyBank, BarChart2, Plus, LogOut, Sparkles, X } from "lucide-react";
+import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, Timestamp } from "firebase/firestore";
+import { TrendingUp, TrendingDown, PiggyBank, BarChart2, Plus, LogOut, Sparkles, X, Trash2, Pencil } from "lucide-react";
 import { analizarTexto } from "../lib/gemini";
 
 const TIPOS = {
@@ -16,9 +16,11 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ type: "expense", concept: "", amount: "", category: "Otros" });
+  const [editingId, setEditingId] = useState(null);
   const [textoIA, setTextoIA] = useState("");
   const [loadingIA, setLoadingIA] = useState(false);
   const [sugerencia, setSugerencia] = useState(null);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
   const user = auth.currentUser;
 
   const now = new Date();
@@ -69,16 +71,38 @@ export default function Dashboard() {
 
   const guardar = async () => {
     if (!form.concept || !form.amount) return;
-    await addDoc(collection(db, "transactions"), {
-      ...form,
-      amount: Number(form.amount),
-      date: Timestamp.now(),
-      userId: user.uid,
-      household: "hogar_principal",
-    });
+    if (editingId) {
+      await updateDoc(doc(db, "transactions", editingId), {
+        type: form.type,
+        concept: form.concept,
+        amount: Number(form.amount),
+        category: form.category,
+      });
+      setEditingId(null);
+    } else {
+      await addDoc(collection(db, "transactions"), {
+        ...form,
+        amount: Number(form.amount),
+        date: Timestamp.now(),
+        userId: user.uid,
+        household: "hogar_principal",
+      });
+    }
     setForm({ type: "expense", concept: "", amount: "", category: "Otros" });
     setSugerencia(null);
     setShowForm(false);
+  };
+
+  const eliminar = async (id) => {
+    await deleteDoc(doc(db, "transactions", id));
+    setSelectedTransaction(null);
+  };
+
+  const editar = (t) => {
+    setEditingId(t.id);
+    setForm({ type: t.type, concept: t.concept, amount: t.amount, category: t.category });
+    setSelectedTransaction(null);
+    setShowForm(true);
   };
 
   return (
@@ -109,11 +133,8 @@ export default function Dashboard() {
             style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#F9FAFB", fontSize: "14px" }}
           />
           {textoIA && (
-            <button
-              onClick={analizarConIA}
-              disabled={loadingIA}
-              style={{ backgroundColor: "#10B981", color: "white", border: "none", borderRadius: "8px", padding: "6px 12px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}
-            >
+            <button onClick={analizarConIA} disabled={loadingIA}
+              style={{ backgroundColor: "#10B981", color: "white", border: "none", borderRadius: "8px", padding: "6px 12px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
               {loadingIA ? "..." : "Añadir"}
             </button>
           )}
@@ -155,17 +176,37 @@ export default function Dashboard() {
             const tipo = TIPOS[t.type] || TIPOS.expense;
             const Icono = tipo.icon;
             return (
-              <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #1F1F1F" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <div style={{ width: "38px", height: "38px", borderRadius: "50%", backgroundColor: tipo.color + "20", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Icono size={16} color={tipo.color} />
+              <div key={t.id}>
+                <div
+                  onClick={() => setSelectedTransaction(selectedTransaction?.id === t.id ? null : t)}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #1F1F1F", cursor: "pointer" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{ width: "38px", height: "38px", borderRadius: "50%", backgroundColor: tipo.color + "20", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Icono size={16} color={tipo.color} />
+                    </div>
+                    <div>
+                      <p style={{ color: "#F9FAFB", fontSize: "14px", fontWeight: "500", margin: 0 }}>{t.concept}</p>
+                      <p style={{ color: "#6B7280", fontSize: "12px", margin: 0 }}>{t.category}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p style={{ color: "#F9FAFB", fontSize: "14px", fontWeight: "500", margin: 0 }}>{t.concept}</p>
-                    <p style={{ color: "#6B7280", fontSize: "12px", margin: 0 }}>{t.category}</p>
-                  </div>
+                  <p style={{ color: tipo.color, fontWeight: "600", margin: 0 }}>{Number(t.amount).toFixed(2)}€</p>
                 </div>
-                <p style={{ color: tipo.color, fontWeight: "600", margin: 0 }}>{Number(t.amount).toFixed(2)}€</p>
+
+                {/* Opciones editar/eliminar */}
+                {selectedTransaction?.id === t.id && (
+                  <div style={{ display: "flex", gap: "8px", padding: "8px 0 12px 0", borderBottom: "1px solid #1F1F1F" }}>
+                    <button
+                      onClick={() => editar(t)}
+                      style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "10px", borderRadius: "10px", border: "none", backgroundColor: "#2D2D2D", color: "#9CA3AF", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}>
+                      <Pencil size={14} /> Editar
+                    </button>
+                    <button
+                      onClick={() => eliminar(t.id)}
+                      style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "10px", borderRadius: "10px", border: "none", backgroundColor: "#F87171" + "20", color: "#F87171", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}>
+                      <Trash2 size={14} /> Eliminar
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -173,9 +214,8 @@ export default function Dashboard() {
 
       {/* Botón + flotante */}
       <button
-        onClick={() => { setSugerencia(null); setForm({ type: "expense", concept: "", amount: "", category: "Otros" }); setShowForm(true); }}
-        style={{ position: "fixed", bottom: "80px", right: "24px", width: "56px", height: "56px", borderRadius: "50%", backgroundColor: "#10B981", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(16,185,129,0.4)" }}
-      >
+        onClick={() => { setSugerencia(null); setEditingId(null); setForm({ type: "expense", concept: "", amount: "", category: "Otros" }); setShowForm(true); }}
+        style={{ position: "fixed", bottom: "80px", right: "24px", width: "56px", height: "56px", borderRadius: "50%", backgroundColor: "#10B981", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(16,185,129,0.4)" }}>
         <Plus size={24} color="white" />
       </button>
 
@@ -183,63 +223,43 @@ export default function Dashboard() {
       {showForm && (
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.75)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 200 }}>
           <div style={{ width: "100%", maxWidth: "480px", backgroundColor: "#1C1C1E", borderRadius: "24px 24px 0 0", padding: "24px" }}>
-
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <h3 style={{ color: "white", fontSize: "18px", fontWeight: "600", margin: 0 }}>
-                {sugerencia ? "✨ Revisá el registro" : "Nuevo registro"}
+                {editingId ? "✏️ Editar registro" : sugerencia ? "✨ Revisá el registro" : "Nuevo registro"}
               </h3>
-              <button onClick={() => { setShowForm(false); setSugerencia(null); }} style={{ background: "none", border: "none", cursor: "pointer" }}>
+              <button onClick={() => { setShowForm(false); setSugerencia(null); setEditingId(null); }} style={{ background: "none", border: "none", cursor: "pointer" }}>
                 <X size={20} color="#9CA3AF" />
               </button>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "8px", marginBottom: "16px" }}>
               {Object.entries(TIPOS).map(([key, val]) => (
-                <button
-                  key={key}
-                  onClick={() => setForm({ ...form, type: key })}
-                  style={{ padding: "8px 4px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "11px", fontWeight: "600", backgroundColor: form.type === key ? val.color : "#2D2D2D", color: form.type === key ? "white" : "#9CA3AF" }}
-                >
+                <button key={key} onClick={() => setForm({ ...form, type: key })}
+                  style={{ padding: "8px 4px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "11px", fontWeight: "600", backgroundColor: form.type === key ? val.color : "#2D2D2D", color: form.type === key ? "white" : "#9CA3AF" }}>
                   {val.label}
                 </button>
               ))}
             </div>
 
-            <input
-              placeholder="Concepto"
-              value={form.concept}
-              onChange={e => setForm({ ...form, concept: e.target.value })}
-              style={{ width: "100%", backgroundColor: "#2D2D2D", border: "none", borderRadius: "12px", padding: "14px 16px", color: "white", fontSize: "14px", outline: "none", marginBottom: "12px", boxSizing: "border-box" }}
-            />
-            <input
-              placeholder="Importe en €"
-              type="number"
-              value={form.amount}
-              onChange={e => setForm({ ...form, amount: e.target.value })}
-              style={{ width: "100%", backgroundColor: "#2D2D2D", border: "none", borderRadius: "12px", padding: "14px 16px", color: "white", fontSize: "14px", outline: "none", marginBottom: "12px", boxSizing: "border-box" }}
-            />
-            <select
-              value={form.category}
-              onChange={e => setForm({ ...form, category: e.target.value })}
-              style={{ width: "100%", backgroundColor: "#2D2D2D", border: "none", borderRadius: "12px", padding: "14px 16px", color: "white", fontSize: "14px", outline: "none", marginBottom: "20px", boxSizing: "border-box" }}
-            >
+            <input placeholder="Concepto" value={form.concept} onChange={e => setForm({ ...form, concept: e.target.value })}
+              style={{ width: "100%", backgroundColor: "#2D2D2D", border: "none", borderRadius: "12px", padding: "14px 16px", color: "white", fontSize: "14px", outline: "none", marginBottom: "12px", boxSizing: "border-box" }} />
+            <input placeholder="Importe en €" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}
+              style={{ width: "100%", backgroundColor: "#2D2D2D", border: "none", borderRadius: "12px", padding: "14px 16px", color: "white", fontSize: "14px", outline: "none", marginBottom: "12px", boxSizing: "border-box" }} />
+            <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
+              style={{ width: "100%", backgroundColor: "#2D2D2D", border: "none", borderRadius: "12px", padding: "14px 16px", color: "white", fontSize: "14px", outline: "none", marginBottom: "20px", boxSizing: "border-box" }}>
               {["Hogar", "Alimentación", "Transporte", "Ocio", "Salud", "Suscripciones", "Inversión", "Ahorro", "Otros"].map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
 
             <div style={{ display: "flex", gap: "12px" }}>
-              <button
-                onClick={() => { setShowForm(false); setSugerencia(null); }}
-                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", backgroundColor: "#2D2D2D", color: "#9CA3AF", fontWeight: "600", cursor: "pointer", fontSize: "15px" }}
-              >
+              <button onClick={() => { setShowForm(false); setSugerencia(null); setEditingId(null); }}
+                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", backgroundColor: "#2D2D2D", color: "#9CA3AF", fontWeight: "600", cursor: "pointer", fontSize: "15px" }}>
                 Cancelar
               </button>
-              <button
-                onClick={guardar}
-                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", backgroundColor: "#10B981", color: "white", fontWeight: "600", cursor: "pointer", fontSize: "15px" }}
-              >
-                Guardar
+              <button onClick={guardar}
+                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", backgroundColor: "#10B981", color: "white", fontWeight: "600", cursor: "pointer", fontSize: "15px" }}>
+                {editingId ? "Actualizar" : "Guardar"}
               </button>
             </div>
           </div>
