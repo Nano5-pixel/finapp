@@ -8,7 +8,8 @@ import History from "./pages/History";
 import Budget from "./pages/Budget";
 import Recurring from "./pages/Recurring";
 import Profile from "./pages/Profile";
-import { LayoutDashboard, BarChart2, BookOpen, Target, RefreshCw, UserCircle } from "lucide-react";
+import Goals from "./pages/Goals";
+import { LayoutDashboard, BarChart2, BookOpen, Target, RefreshCw, UserCircle, Trophy } from "lucide-react";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -41,6 +42,7 @@ function App() {
       {page === "budget" && <Budget />}
       {page === "recurring" && <Recurring />}
       {page === "profile" && <Profile />}
+      {page === "goals" && <Goals />}
 
       {/* Barra de navegación inferior */}
       <div style={{
@@ -56,35 +58,40 @@ function App() {
         padding: "10px 0 20px 0",
         zIndex: 100
       }}>
-        <div style={{ display: "flex", gap: "24px" }}>
+        <div style={{ display: "flex", gap: "20px" }}>
           <button onClick={() => setPage("dashboard")}
             style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-            <LayoutDashboard size={22} color={page === "dashboard" ? "#10B981" : "#6B7280"} />
+            <LayoutDashboard size={21} color={page === "dashboard" ? "#10B981" : "#6B7280"} />
             <span style={{ fontSize: "9px", color: page === "dashboard" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Inicio</span>
           </button>
           <button onClick={() => setPage("reports")}
             style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-            <BarChart2 size={22} color={page === "reports" ? "#10B981" : "#6B7280"} />
+            <BarChart2 size={21} color={page === "reports" ? "#10B981" : "#6B7280"} />
             <span style={{ fontSize: "9px", color: page === "reports" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Reportes</span>
           </button>
           <button onClick={() => setPage("budget")}
             style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-            <Target size={22} color={page === "budget" ? "#10B981" : "#6B7280"} />
+            <Target size={21} color={page === "budget" ? "#10B981" : "#6B7280"} />
             <span style={{ fontSize: "9px", color: page === "budget" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Presupuesto</span>
+          </button>
+          <button onClick={() => setPage("goals")}
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
+            <Trophy size={21} color={page === "goals" ? "#10B981" : "#6B7280"} />
+            <span style={{ fontSize: "9px", color: page === "goals" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Metas</span>
           </button>
           <button onClick={() => setPage("recurring")}
             style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-            <RefreshCw size={22} color={page === "recurring" ? "#10B981" : "#6B7280"} />
+            <RefreshCw size={21} color={page === "recurring" ? "#10B981" : "#6B7280"} />
             <span style={{ fontSize: "9px", color: page === "recurring" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Recurrentes</span>
           </button>
           <button onClick={() => setPage("history")}
             style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-            <BookOpen size={22} color={page === "history" ? "#10B981" : "#6B7280"} />
+            <BookOpen size={21} color={page === "history" ? "#10B981" : "#6B7280"} />
             <span style={{ fontSize: "9px", color: page === "history" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Historial</span>
           </button>
           <button onClick={() => setPage("profile")}
             style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-            <UserCircle size={22} color={page === "profile" ? "#10B981" : "#6B7280"} />
+            <UserCircle size={21} color={page === "profile" ? "#10B981" : "#6B7280"} />
             <span style={{ fontSize: "9px", color: page === "profile" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Perfil</span>
           </button>
         </div>
