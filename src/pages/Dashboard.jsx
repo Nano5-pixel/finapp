@@ -5,10 +5,18 @@ import { TrendingUp, TrendingDown, PiggyBank, BarChart2, Plus, Sparkles, X, Tras
 import { analizarTexto } from "../lib/gemini";
 
 const TIPOS = {
-  income: { label: "Ingreso", color: "#10B981", icon: TrendingUp },
-  expense: { label: "Gasto", color: "#F87171", icon: TrendingDown },
-  investment: { label: "Inversión", color: "#60A5FA", icon: BarChart2 },
-  saving: { label: "Ahorro", color: "#FBBF24", icon: PiggyBank },
+  income: { label: "Ingreso", color: "#34d399", icon: TrendingUp },
+  expense: { label: "Gasto", color: "#fb7185", icon: TrendingDown },
+  investment: { label: "Inversión", color: "#818cf8", icon: BarChart2 },
+  saving: { label: "Ahorro", color: "#fbbf24", icon: PiggyBank },
+};
+
+const glass = {
+  backgroundColor: "rgba(15, 23, 42, 0.6)",
+  backdropFilter: "blur(12px)",
+  WebkitBackdropFilter: "blur(12px)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: "20px",
 };
 
 export default function Dashboard() {
@@ -29,8 +37,7 @@ export default function Dashboard() {
   useEffect(() => {
     const q = query(collection(db, "transactions"), where("household", "==", "hogar_principal"));
     const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setTransactions(data);
+      setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return unsub;
   }, []);
@@ -40,9 +47,7 @@ export default function Dashboard() {
     return fecha.getMonth() === mesActual && fecha.getFullYear() === añoActual;
   });
 
-  const total = (tipo) => transaccionesMes
-    .filter(t => t.type === tipo)
-    .reduce((acc, t) => acc + Number(t.amount), 0);
+  const total = (tipo) => transaccionesMes.filter(t => t.type === tipo).reduce((acc, t) => acc + Number(t.amount), 0);
 
   const ingresos = total("income");
   const gastos = total("expense");
@@ -56,12 +61,7 @@ export default function Dashboard() {
     const resultado = await analizarTexto(textoIA);
     if (resultado) {
       setSugerencia(resultado);
-      setForm({
-        type: resultado.type || "expense",
-        concept: resultado.concept || "",
-        amount: resultado.amount || "",
-        category: resultado.category || "Otros",
-      });
+      setForm({ type: resultado.type || "expense", concept: resultado.concept || "", amount: resultado.amount || "", category: resultado.category || "Otros" });
       setShowForm(true);
     }
     setLoadingIA(false);
@@ -71,185 +71,175 @@ export default function Dashboard() {
   const guardar = async () => {
     if (!form.concept || !form.amount) return;
     if (editingId) {
-      await updateDoc(doc(db, "transactions", editingId), {
-        type: form.type,
-        concept: form.concept,
-        amount: Number(form.amount),
-        category: form.category,
-      });
+      await updateDoc(doc(db, "transactions", editingId), { type: form.type, concept: form.concept, amount: Number(form.amount), category: form.category });
       setEditingId(null);
     } else {
-      await addDoc(collection(db, "transactions"), {
-        ...form,
-        amount: Number(form.amount),
-        date: Timestamp.now(),
-        userId: user.uid,
-        household: "hogar_principal",
-      });
+      await addDoc(collection(db, "transactions"), { ...form, amount: Number(form.amount), date: Timestamp.now(), userId: user.uid, household: "hogar_principal" });
     }
     setForm({ type: "expense", concept: "", amount: "", category: "Otros" });
     setSugerencia(null);
     setShowForm(false);
   };
 
-  const eliminar = async (id) => {
-    await deleteDoc(doc(db, "transactions", id));
-    setSelectedTransaction(null);
-  };
-
-  const editar = (t) => {
-    setEditingId(t.id);
-    setForm({ type: t.type, concept: t.concept, amount: t.amount, category: t.category });
-    setSelectedTransaction(null);
-    setShowForm(true);
-  };
+  const eliminar = async (id) => { await deleteDoc(doc(db, "transactions", id)); setSelectedTransaction(null); };
+  const editar = (t) => { setEditingId(t.id); setForm({ type: t.type, concept: t.concept, amount: t.amount, category: t.category }); setSelectedTransaction(null); setShowForm(true); };
 
   return (
-    <div style={{ backgroundColor: "#0F0F0F", minHeight: "100vh" }}>
+    <div style={{ minHeight: "100vh" }}>
       <div style={{ maxWidth: "480px", margin: "0 auto", padding: "0 16px 140px 16px" }}>
 
         {/* Header */}
-        <div style={{ paddingTop: "24px", paddingBottom: "16px" }}>
-          <h1 style={{ color: "#10B981", fontSize: "24px", fontWeight: "bold", margin: 0 }}>FinApp</h1>
-          <p style={{ color: "#9CA3AF", fontSize: "13px", margin: 0 }}>
+        <div style={{ paddingTop: "28px", paddingBottom: "20px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "10px", background: "linear-gradient(135deg, #6366f1, #06b6d4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ color: "white", fontSize: "16px", fontWeight: "800" }}>F</span>
+            </div>
+            <h1 style={{ color: "#f1f5f9", fontSize: "22px", fontWeight: "700", margin: 0, letterSpacing: "-0.5px" }}>FinApp</h1>
+          </div>
+          <p style={{ color: "#64748b", fontSize: "13px", margin: 0, paddingLeft: "42px" }}>
             {now.toLocaleString("es-ES", { month: "long", year: "numeric" })}
           </p>
         </div>
 
         {/* Input IA */}
-        <div style={{ backgroundColor: "#1C1C1E", borderRadius: "16px", padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
-          <Sparkles size={18} color="#10B981" style={{ flexShrink: 0 }} />
+        <div style={{ ...glass, padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px", background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(6,182,212,0.05))", border: "1px solid rgba(99,102,241,0.3)" }}>
+          <Sparkles size={17} color="#6366f1" style={{ flexShrink: 0 }} />
           <input
             placeholder='Escribe: "200€ Mercadona" o "Nómina 1800€"'
             value={textoIA}
             onChange={e => setTextoIA(e.target.value)}
             onKeyDown={e => e.key === "Enter" && analizarConIA()}
-            style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#F9FAFB", fontSize: "14px" }}
+            style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#f1f5f9", fontSize: "14px" }}
           />
           {textoIA && (
             <button onClick={analizarConIA} disabled={loadingIA}
-              style={{ backgroundColor: "#10B981", color: "white", border: "none", borderRadius: "8px", padding: "6px 12px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
-              {loadingIA ? "..." : "Añadir"}
+              style={{ background: "linear-gradient(135deg, #6366f1, #06b6d4)", color: "white", border: "none", borderRadius: "8px", padding: "6px 14px", fontSize: "12px", fontWeight: "600", cursor: "pointer", transition: "opacity 0.2s" }}>
+              {loadingIA ? "..." : "✨ Añadir"}
             </button>
           )}
         </div>
 
         {/* Resumen 4 bloques */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
           {[
-            { label: "Ingresos", value: ingresos, color: "#10B981" },
-            { label: "Gastos", value: gastos, color: "#F87171" },
-            { label: "Inversiones", value: inversiones, color: "#60A5FA" },
-            { label: "Ahorro", value: ahorro, color: "#FBBF24" },
-          ].map(({ label, value, color }) => (
-            <div key={label} style={{ backgroundColor: "#1C1C1E", borderRadius: "16px", padding: "16px" }}>
-              <p style={{ color: "#9CA3AF", fontSize: "12px", margin: "0 0 4px 0" }}>{label}</p>
-              <p style={{ color, fontSize: "20px", fontWeight: "bold", margin: 0 }}>{value.toFixed(2)}€</p>
+            { label: "Ingresos", value: ingresos, color: "#34d399", bg: "rgba(52,211,153,0.08)" },
+            { label: "Gastos", value: gastos, color: "#fb7185", bg: "rgba(251,113,133,0.08)" },
+            { label: "Inversiones", value: inversiones, color: "#818cf8", bg: "rgba(129,140,248,0.08)" },
+            { label: "Ahorro", value: ahorro, color: "#fbbf24", bg: "rgba(251,191,36,0.08)" },
+          ].map(({ label, value, color, bg }) => (
+            <div key={label} style={{ ...glass, padding: "16px", backgroundColor: bg }}>
+              <p style={{ color: "#64748b", fontSize: "11px", fontWeight: "500", margin: "0 0 6px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</p>
+              <p style={{ color, fontSize: "20px", fontWeight: "700", margin: 0, letterSpacing: "-0.5px" }}>{value.toFixed(2)}€</p>
             </div>
           ))}
         </div>
 
         {/* Resultado neto */}
-        <div style={{ backgroundColor: "#1C1C1E", borderRadius: "16px", padding: "20px", textAlign: "center", marginBottom: "24px" }}>
-          <p style={{ color: "#9CA3AF", fontSize: "13px", margin: "0 0 6px 0" }}>Resultado neto del mes</p>
-          <p style={{ color: neto >= 0 ? "#10B981" : "#F87171", fontSize: "36px", fontWeight: "bold", margin: 0 }}>
+        <div style={{ ...glass, padding: "20px", textAlign: "center", marginBottom: "24px", background: neto >= 0 ? "linear-gradient(135deg, rgba(52,211,153,0.08), rgba(6,182,212,0.05))" : "linear-gradient(135deg, rgba(251,113,133,0.08), rgba(239,68,68,0.05))" }}>
+          <p style={{ color: "#64748b", fontSize: "12px", fontWeight: "500", margin: "0 0 8px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>Resultado neto del mes</p>
+          <p style={{ color: neto >= 0 ? "#34d399" : "#fb7185", fontSize: "38px", fontWeight: "800", margin: 0, letterSpacing: "-1px" }}>
             {neto >= 0 ? "+" : ""}{neto.toFixed(2)}€
           </p>
         </div>
 
         {/* Lista transacciones */}
-        <p style={{ color: "#9CA3AF", fontSize: "12px", fontWeight: "600", letterSpacing: "0.05em", marginBottom: "12px" }}>ESTE MES</p>
+        <p style={{ color: "#475569", fontSize: "11px", fontWeight: "600", letterSpacing: "0.08em", marginBottom: "12px", textTransform: "uppercase" }}>Este mes</p>
 
         {transaccionesMes.length === 0 && (
-          <p style={{ color: "#4B5563", textAlign: "center", padding: "40px 0" }}>Aún no hay registros este mes</p>
+          <div style={{ ...glass, padding: "40px", textAlign: "center" }}>
+            <p style={{ color: "#334155", margin: 0 }}>Aún no hay registros este mes</p>
+          </div>
         )}
 
-        {[...transaccionesMes]
-          .sort((a, b) => (b.date?.seconds || 0) - (a.date?.seconds || 0))
-          .map(t => {
-            const tipo = TIPOS[t.type] || TIPOS.expense;
-            const Icono = tipo.icon;
-            return (
-              <div key={t.id}>
-                <div
-                  onClick={() => setSelectedTransaction(selectedTransaction?.id === t.id ? null : t)}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #1F1F1F", cursor: "pointer" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <div style={{ width: "38px", height: "38px", borderRadius: "50%", backgroundColor: tipo.color + "20", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <Icono size={16} color={tipo.color} />
-                    </div>
-                    <div>
-                      <p style={{ color: "#F9FAFB", fontSize: "14px", fontWeight: "500", margin: 0 }}>{t.concept}</p>
-                      <p style={{ color: "#6B7280", fontSize: "12px", margin: 0 }}>{t.category}</p>
-                    </div>
+        {[...transaccionesMes].sort((a, b) => (b.date?.seconds || 0) - (a.date?.seconds || 0)).map(t => {
+          const tipo = TIPOS[t.type] || TIPOS.expense;
+          const Icono = tipo.icon;
+          return (
+            <div key={t.id}>
+              <div onClick={() => setSelectedTransaction(selectedTransaction?.id === t.id ? null : t)}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", cursor: "pointer", transition: "opacity 0.2s" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{ width: "40px", height: "40px", borderRadius: "12px", backgroundColor: tipo.color + "15", border: `1px solid ${tipo.color}25`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Icono size={16} color={tipo.color} />
                   </div>
-                  <p style={{ color: tipo.color, fontWeight: "600", margin: 0 }}>{Number(t.amount).toFixed(2)}€</p>
+                  <div>
+                    <p style={{ color: "#e2e8f0", fontSize: "14px", fontWeight: "500", margin: 0 }}>{t.concept}</p>
+                    <p style={{ color: "#475569", fontSize: "12px", margin: 0 }}>{t.category}</p>
+                  </div>
                 </div>
-
-                {selectedTransaction?.id === t.id && (
-                  <div style={{ display: "flex", gap: "8px", padding: "8px 0 12px 0", borderBottom: "1px solid #1F1F1F" }}>
-                    <button onClick={() => editar(t)}
-                      style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "10px", borderRadius: "10px", border: "none", backgroundColor: "#2D2D2D", color: "#9CA3AF", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}>
-                      <Pencil size={14} /> Editar
-                    </button>
-                    <button onClick={() => eliminar(t.id)}
-                      style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "10px", borderRadius: "10px", border: "none", backgroundColor: "#F87171" + "20", color: "#F87171", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}>
-                      <Trash2 size={14} /> Eliminar
-                    </button>
-                  </div>
-                )}
+                <p style={{ color: tipo.color, fontWeight: "700", margin: 0, fontSize: "15px" }}>{Number(t.amount).toFixed(2)}€</p>
               </div>
-            );
-          })}
+
+              {selectedTransaction?.id === t.id && (
+                <div style={{ display: "flex", gap: "8px", padding: "8px 0 12px 0" }}>
+                  <button onClick={() => editar(t)}
+                    style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "10px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.04)", color: "#94a3b8", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}>
+                    <Pencil size={13} /> Editar
+                  </button>
+                  <button onClick={() => eliminar(t.id)}
+                    style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "10px", borderRadius: "10px", border: "1px solid rgba(251,113,133,0.2)", backgroundColor: "rgba(251,113,133,0.08)", color: "#fb7185", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}>
+                    <Trash2 size={13} /> Eliminar
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Firma */}
+        <p style={{ color: "#1e293b", fontSize: "11px", textAlign: "center", marginTop: "32px" }}>hecho por Nano</p>
       </div>
 
       {/* Botón + flotante */}
-      <button
-        onClick={() => { setSugerencia(null); setEditingId(null); setForm({ type: "expense", concept: "", amount: "", category: "Otros" }); setShowForm(true); }}
-        style={{ position: "fixed", bottom: "80px", right: "24px", width: "56px", height: "56px", borderRadius: "50%", backgroundColor: "#10B981", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(16,185,129,0.4)" }}>
-        <Plus size={24} color="white" />
+      <button onClick={() => { setSugerencia(null); setEditingId(null); setForm({ type: "expense", concept: "", amount: "", category: "Otros" }); setShowForm(true); }}
+        style={{ position: "fixed", bottom: "84px", right: "20px", width: "54px", height: "54px", borderRadius: "16px", background: "linear-gradient(135deg, #6366f1, #06b6d4)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 32px rgba(99,102,241,0.4)" }}>
+        <Plus size={22} color="white" />
       </button>
 
       {/* Modal formulario */}
       {showForm && (
-        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.75)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 200 }}>
-          <div style={{ width: "100%", maxWidth: "480px", backgroundColor: "#1C1C1E", borderRadius: "24px 24px 0 0", padding: "24px" }}>
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(2,6,23,0.8)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 200 }}>
+          <div style={{ width: "100%", maxWidth: "480px", backgroundColor: "#0f172a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "28px 28px 0 0", padding: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h3 style={{ color: "white", fontSize: "18px", fontWeight: "600", margin: 0 }}>
-                {editingId ? "✏️ Editar registro" : sugerencia ? "✨ Revisá el registro" : "Nuevo registro"}
+              <h3 style={{ color: "#f1f5f9", fontSize: "18px", fontWeight: "700", margin: 0 }}>
+                {editingId ? "✏️ Editar registro" : sugerencia ? "✨ Revisar registro" : "Nuevo registro"}
               </h3>
-              <button onClick={() => { setShowForm(false); setSugerencia(null); setEditingId(null); }} style={{ background: "none", border: "none", cursor: "pointer" }}>
-                <X size={20} color="#9CA3AF" />
+              <button onClick={() => { setShowForm(false); setSugerencia(null); setEditingId(null); }} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: "8px", padding: "6px", cursor: "pointer" }}>
+                <X size={18} color="#64748b" />
               </button>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "8px", marginBottom: "16px" }}>
               {Object.entries(TIPOS).map(([key, val]) => (
                 <button key={key} onClick={() => setForm({ ...form, type: key })}
-                  style={{ padding: "8px 4px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "11px", fontWeight: "600", backgroundColor: form.type === key ? val.color : "#2D2D2D", color: form.type === key ? "white" : "#9CA3AF" }}>
+                  style={{ padding: "10px 4px", borderRadius: "12px", border: form.type === key ? `1px solid ${val.color}40` : "1px solid rgba(255,255,255,0.06)", cursor: "pointer", fontSize: "11px", fontWeight: "600", backgroundColor: form.type === key ? val.color + "20" : "rgba(255,255,255,0.03)", color: form.type === key ? val.color : "#64748b", transition: "all 0.2s" }}>
                   {val.label}
                 </button>
               ))}
             </div>
 
-            <input placeholder="Concepto" value={form.concept} onChange={e => setForm({ ...form, concept: e.target.value })}
-              style={{ width: "100%", backgroundColor: "#2D2D2D", border: "none", borderRadius: "12px", padding: "14px 16px", color: "white", fontSize: "14px", outline: "none", marginBottom: "12px", boxSizing: "border-box" }} />
-            <input placeholder="Importe en €" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}
-              style={{ width: "100%", backgroundColor: "#2D2D2D", border: "none", borderRadius: "12px", padding: "14px 16px", color: "white", fontSize: "14px", outline: "none", marginBottom: "12px", boxSizing: "border-box" }} />
+            {[
+              { placeholder: "Concepto", key: "concept", type: "text" },
+              { placeholder: "Importe en €", key: "amount", type: "number" },
+            ].map(({ placeholder, key, type }) => (
+              <input key={key} placeholder={placeholder} type={type} value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })}
+                style={{ width: "100%", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "14px 16px", color: "#f1f5f9", fontSize: "14px", outline: "none", marginBottom: "10px", boxSizing: "border-box" }} />
+            ))}
+
             <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
-              style={{ width: "100%", backgroundColor: "#2D2D2D", border: "none", borderRadius: "12px", padding: "14px 16px", color: "white", fontSize: "14px", outline: "none", marginBottom: "20px", boxSizing: "border-box" }}>
+              style={{ width: "100%", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "14px 16px", color: "#f1f5f9", fontSize: "14px", outline: "none", marginBottom: "20px", boxSizing: "border-box" }}>
               {["Hogar", "Alimentación", "Transporte", "Ocio", "Salud", "Suscripciones", "Inversión", "Ahorro", "Otros"].map(c => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c} style={{ backgroundColor: "#0f172a" }}>{c}</option>
               ))}
             </select>
 
-            <div style={{ display: "flex", gap: "12px" }}>
+            <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={() => { setShowForm(false); setSugerencia(null); setEditingId(null); }}
-                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", backgroundColor: "#2D2D2D", color: "#9CA3AF", fontWeight: "600", cursor: "pointer", fontSize: "15px" }}>
+                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.04)", color: "#64748b", fontWeight: "600", cursor: "pointer", fontSize: "15px" }}>
                 Cancelar
               </button>
               <button onClick={guardar}
-                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", backgroundColor: "#10B981", color: "white", fontWeight: "600", cursor: "pointer", fontSize: "15px" }}>
+                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", background: "linear-gradient(135deg, #6366f1, #06b6d4)", color: "white", fontWeight: "700", cursor: "pointer", fontSize: "15px" }}>
                 {editingId ? "Actualizar" : "Guardar"}
               </button>
             </div>

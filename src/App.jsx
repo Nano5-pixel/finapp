@@ -26,8 +26,13 @@ function App() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#0F0F0F" }}>
-        <p style={{ color: "#10B981" }}>Cargando...</p>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: "40px", height: "40px", borderRadius: "12px", background: "linear-gradient(135deg, #6366f1, #06b6d4)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+            <span style={{ color: "white", fontSize: "20px", fontWeight: "800" }}>F</span>
+          </div>
+          <p style={{ color: "#6366f1" }}>Cargando...</p>
+        </div>
       </div>
     );
   }
@@ -35,7 +40,7 @@ function App() {
   if (!user) return <Login />;
 
   return (
-    <div style={{ backgroundColor: "#0F0F0F", minHeight: "100vh" }}>
+    <div style={{ minHeight: "100vh" }}>
       {page === "dashboard" && <Dashboard />}
       {page === "reports" && <Reports />}
       {page === "history" && <History />}
@@ -50,8 +55,10 @@ function App() {
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: "#161616",
-        borderTop: "1px solid #2D2D2D",
+        backgroundColor: "rgba(2,6,23,0.85)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        borderTop: "1px solid rgba(255,255,255,0.06)",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
@@ -59,41 +66,21 @@ function App() {
         zIndex: 100
       }}>
         <div style={{ display: "flex", gap: "20px" }}>
-          <button onClick={() => setPage("dashboard")}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-            <LayoutDashboard size={21} color={page === "dashboard" ? "#10B981" : "#6B7280"} />
-            <span style={{ fontSize: "9px", color: page === "dashboard" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Inicio</span>
-          </button>
-          <button onClick={() => setPage("reports")}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-            <BarChart2 size={21} color={page === "reports" ? "#10B981" : "#6B7280"} />
-            <span style={{ fontSize: "9px", color: page === "reports" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Reportes</span>
-          </button>
-          <button onClick={() => setPage("budget")}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-            <Target size={21} color={page === "budget" ? "#10B981" : "#6B7280"} />
-            <span style={{ fontSize: "9px", color: page === "budget" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Presupuesto</span>
-          </button>
-          <button onClick={() => setPage("goals")}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-            <Trophy size={21} color={page === "goals" ? "#10B981" : "#6B7280"} />
-            <span style={{ fontSize: "9px", color: page === "goals" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Metas</span>
-          </button>
-          <button onClick={() => setPage("recurring")}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-            <RefreshCw size={21} color={page === "recurring" ? "#10B981" : "#6B7280"} />
-            <span style={{ fontSize: "9px", color: page === "recurring" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Recurrentes</span>
-          </button>
-          <button onClick={() => setPage("history")}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-            <BookOpen size={21} color={page === "history" ? "#10B981" : "#6B7280"} />
-            <span style={{ fontSize: "9px", color: page === "history" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Historial</span>
-          </button>
-          <button onClick={() => setPage("profile")}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-            <UserCircle size={21} color={page === "profile" ? "#10B981" : "#6B7280"} />
-            <span style={{ fontSize: "9px", color: page === "profile" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Perfil</span>
-          </button>
+          {[
+            { key: "dashboard", icon: LayoutDashboard, label: "Inicio" },
+            { key: "reports", icon: BarChart2, label: "Reportes" },
+            { key: "budget", icon: Target, label: "Presupuesto" },
+            { key: "goals", icon: Trophy, label: "Metas" },
+            { key: "recurring", icon: RefreshCw, label: "Recurrentes" },
+            { key: "history", icon: BookOpen, label: "Historial" },
+            { key: "profile", icon: UserCircle, label: "Perfil" },
+          ].map(({ key, icon: Icon, label }) => (
+            <button key={key} onClick={() => setPage(key)}
+              style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px", transition: "opacity 0.2s" }}>
+              <Icon size={21} color={page === key ? "#6366f1" : "#334155"} />
+              <span style={{ fontSize: "9px", color: page === key ? "#6366f1" : "#334155", fontWeight: "500" }}>{label}</span>
+            </button>
+          ))}
         </div>
       </div>
     </div>
