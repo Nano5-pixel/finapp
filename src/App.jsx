@@ -7,7 +7,8 @@ import Reports from "./pages/Reports";
 import History from "./pages/History";
 import Budget from "./pages/Budget";
 import Recurring from "./pages/Recurring";
-import { LayoutDashboard, BarChart2, BookOpen, Target, RefreshCw } from "lucide-react";
+import Profile from "./pages/Profile";
+import { LayoutDashboard, BarChart2, BookOpen, Target, RefreshCw, UserCircle } from "lucide-react";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -39,6 +40,7 @@ function App() {
       {page === "history" && <History />}
       {page === "budget" && <Budget />}
       {page === "recurring" && <Recurring />}
+      {page === "profile" && <Profile />}
 
       {/* Barra de navegación inferior */}
       <div style={{
@@ -54,7 +56,7 @@ function App() {
         padding: "10px 0 20px 0",
         zIndex: 100
       }}>
-        <div style={{ display: "flex", gap: "28px" }}>
+        <div style={{ display: "flex", gap: "24px" }}>
           <button onClick={() => setPage("dashboard")}
             style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
             <LayoutDashboard size={22} color={page === "dashboard" ? "#10B981" : "#6B7280"} />
@@ -79,6 +81,11 @@ function App() {
             style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
             <BookOpen size={22} color={page === "history" ? "#10B981" : "#6B7280"} />
             <span style={{ fontSize: "9px", color: page === "history" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Historial</span>
+          </button>
+          <button onClick={() => setPage("profile")}
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
+            <UserCircle size={22} color={page === "profile" ? "#10B981" : "#6B7280"} />
+            <span style={{ fontSize: "9px", color: page === "profile" ? "#10B981" : "#6B7280", fontWeight: "500" }}>Perfil</span>
           </button>
         </div>
       </div>
