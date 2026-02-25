@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../lib/firebase";
-import { signOut } from "firebase/auth";
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, Timestamp } from "firebase/firestore";
-import { TrendingUp, TrendingDown, PiggyBank, BarChart2, Plus, LogOut, Sparkles, X, Trash2, Pencil } from "lucide-react";
+import { TrendingUp, TrendingDown, PiggyBank, BarChart2, Plus, Sparkles, X, Trash2, Pencil } from "lucide-react";
 import { analizarTexto } from "../lib/gemini";
 
 const TIPOS = {
@@ -110,16 +109,11 @@ export default function Dashboard() {
       <div style={{ maxWidth: "480px", margin: "0 auto", padding: "0 16px 140px 16px" }}>
 
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "24px", paddingBottom: "16px" }}>
-          <div>
-            <h1 style={{ color: "#10B981", fontSize: "24px", fontWeight: "bold", margin: 0 }}>FinApp</h1>
-            <p style={{ color: "#9CA3AF", fontSize: "13px", margin: 0 }}>
-              {now.toLocaleString("es-ES", { month: "long", year: "numeric" })}
-            </p>
-          </div>
-          <button onClick={() => signOut(auth)} style={{ background: "none", border: "none", cursor: "pointer", padding: "8px" }}>
-            <LogOut size={20} color="#9CA3AF" />
-          </button>
+        <div style={{ paddingTop: "24px", paddingBottom: "16px" }}>
+          <h1 style={{ color: "#10B981", fontSize: "24px", fontWeight: "bold", margin: 0 }}>FinApp</h1>
+          <p style={{ color: "#9CA3AF", fontSize: "13px", margin: 0 }}>
+            {now.toLocaleString("es-ES", { month: "long", year: "numeric" })}
+          </p>
         </div>
 
         {/* Input IA */}
@@ -192,16 +186,13 @@ export default function Dashboard() {
                   <p style={{ color: tipo.color, fontWeight: "600", margin: 0 }}>{Number(t.amount).toFixed(2)}€</p>
                 </div>
 
-                {/* Opciones editar/eliminar */}
                 {selectedTransaction?.id === t.id && (
                   <div style={{ display: "flex", gap: "8px", padding: "8px 0 12px 0", borderBottom: "1px solid #1F1F1F" }}>
-                    <button
-                      onClick={() => editar(t)}
+                    <button onClick={() => editar(t)}
                       style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "10px", borderRadius: "10px", border: "none", backgroundColor: "#2D2D2D", color: "#9CA3AF", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}>
                       <Pencil size={14} /> Editar
                     </button>
-                    <button
-                      onClick={() => eliminar(t.id)}
+                    <button onClick={() => eliminar(t.id)}
                       style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "10px", borderRadius: "10px", border: "none", backgroundColor: "#F87171" + "20", color: "#F87171", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}>
                       <Trash2 size={14} /> Eliminar
                     </button>
