@@ -10,7 +10,8 @@ import Recurring from "./pages/Recurring";
 import Profile from "./pages/Profile";
 import Goals from "./pages/Goals";
 import Investments from "./pages/Investments";
-import { LayoutDashboard, BarChart2, BookOpen, Target, RefreshCw, UserCircle, Trophy, TrendingUp } from "lucide-react";
+import Import from "./pages/Import";
+import { LayoutDashboard, BarChart2, BookOpen, Target, RefreshCw, UserCircle, Trophy, TrendingUp, FileUp } from "lucide-react";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -44,6 +45,7 @@ function App() {
     { key: "dashboard", icon: LayoutDashboard, label: "Inicio" },
     { key: "reports", icon: BarChart2, label: "Reportes" },
     { key: "investments", icon: TrendingUp, label: "Inversiones" },
+    { key: "import", icon: FileUp, label: "Importar" },
     { key: "budget", icon: Target, label: "Presupuesto" },
     { key: "goals", icon: Trophy, label: "Metas" },
     { key: "recurring", icon: RefreshCw, label: "Recurrentes" },
@@ -61,6 +63,7 @@ function App() {
       {page === "profile" && <Profile />}
       {page === "goals" && <Goals />}
       {page === "investments" && <Investments />}
+      {page === "import" && <Import />}
 
       {/* Barra de navegación inferior con scroll horizontal */}
       <div style={{
