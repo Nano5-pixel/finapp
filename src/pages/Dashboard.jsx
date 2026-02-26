@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { auth, db } from "../lib/firebase";
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, Timestamp } from "firebase/firestore";
-import { TrendingUp, TrendingDown, PiggyBank, BarChart2, Plus, Sparkles, X, Trash2, Pencil } from "lucide-react";
+import { TrendingUp, TrendingDown, PiggyBank, BarChart2, Plus, Sparkles, X, Trash2, Pencil, Mic, MicOff } from "lucide-react";
 import { analizarTexto } from "../lib/gemini";
 
 const TIPOS = {
@@ -28,6 +28,8 @@ export default function Dashboard() {
   const [loadingIA, setLoadingIA] = useState(false);
   const [sugerencia, setSugerencia] = useState(null);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [escuchando, setEscuchando] = useState(false);
+  const recognitionRef = useRef(null);
   const user = auth.currentUser;
 
   const now = new Date();
@@ -54,6 +56,34 @@ export default function Dashboard() {
   const inversiones = total("investment");
   const ahorro = total("saving");
   const neto = ingresos - gastos - inversiones - ahorro;
+
+  const iniciarVoz = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "es-ES";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setEscuchando(true);
+    recognition.onend = () => setEscuchando(false);
+    recognition.onerror = () => setEscuchando(false);
+    recognition.onresult = (event) => {
+      const texto = event.results[0][0].transcript;
+      setTextoIA(texto);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
+  const detenerVoz = () => {
+    recognitionRef.current?.stop();
+    setEscuchando(false);
+  };
 
   const analizarConIA = async () => {
     if (!textoIA.trim()) return;
@@ -101,19 +131,31 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Input IA */}
-        <div style={{ ...glass, padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px", background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(6,182,212,0.05))", border: "1px solid rgba(99,102,241,0.3)" }}>
-          <Sparkles size={17} color="#6366f1" style={{ flexShrink: 0 }} />
+        {/* Input IA con voz */}
+        <div style={{ ...glass, padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px", background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(6,182,212,0.05))", border: escuchando ? "1px solid rgba(251,113,133,0.5)" : "1px solid rgba(99,102,241,0.3)", transition: "border 0.3s" }}>
+          <Sparkles size={17} color={escuchando ? "#fb7185" : "#6366f1"} style={{ flexShrink: 0 }} />
           <input
-            placeholder='Escribe: "200€ Mercadona" o "Nómina 1800€"'
+            placeholder={escuchando ? "Escuchando..." : 'Escribe o habla: "300€ alquiler"'}
             value={textoIA}
             onChange={e => setTextoIA(e.target.value)}
             onKeyDown={e => e.key === "Enter" && analizarConIA()}
             style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#f1f5f9", fontSize: "14px" }}
           />
-          {textoIA && (
+
+          {/* Botón micrófono */}
+          <button
+            onClick={escuchando ? detenerVoz : iniciarVoz}
+            style={{
+              width: "32px", height: "32px", borderRadius: "8px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.2s",
+              background: escuchando ? "rgba(251,113,133,0.2)" : "rgba(255,255,255,0.06)",
+              boxShadow: escuchando ? "0 0 12px rgba(251,113,133,0.4)" : "none"
+            }}>
+            {escuchando ? <MicOff size={15} color="#fb7185" /> : <Mic size={15} color="#64748b" />}
+          </button>
+
+          {textoIA && !escuchando && (
             <button onClick={analizarConIA} disabled={loadingIA}
-              style={{ background: "linear-gradient(135deg, #6366f1, #06b6d4)", color: "white", border: "none", borderRadius: "8px", padding: "6px 14px", fontSize: "12px", fontWeight: "600", cursor: "pointer", transition: "opacity 0.2s" }}>
+              style={{ background: "linear-gradient(135deg, #6366f1, #06b6d4)", color: "white", border: "none", borderRadius: "8px", padding: "6px 14px", fontSize: "12px", fontWeight: "600", cursor: "pointer", flexShrink: 0 }}>
               {loadingIA ? "..." : "✨ Añadir"}
             </button>
           )}
@@ -157,7 +199,7 @@ export default function Dashboard() {
           return (
             <div key={t.id}>
               <div onClick={() => setSelectedTransaction(selectedTransaction?.id === t.id ? null : t)}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", cursor: "pointer", transition: "opacity 0.2s" }}>
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", cursor: "pointer" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                   <div style={{ width: "40px", height: "40px", borderRadius: "12px", backgroundColor: tipo.color + "15", border: `1px solid ${tipo.color}25`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <Icono size={16} color={tipo.color} />
@@ -186,7 +228,6 @@ export default function Dashboard() {
           );
         })}
 
-        {/* Firma */}
         <p style={{ color: "#1e293b", fontSize: "11px", textAlign: "center", marginTop: "32px" }}>hecho por Nano</p>
       </div>
 
