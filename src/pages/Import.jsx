@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { db, auth } from "../lib/firebase";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where, Timestamp } from "firebase/firestore";
 import { analizarExtracto } from "../lib/gemini";
-import { Upload, Check, X, FileText, Image, Loader } from "lucide-react";
+import { Upload, Check, X, Loader } from "lucide-react";
 
 const glass = {
   backgroundColor: "rgba(15, 23, 42, 0.6)",
@@ -20,7 +20,7 @@ const TIPOS = {
 };
 
 export default function Import() {
-  const [step, setStep] = useState("upload"); // upload | analyzing | review | done
+  const [step, setStep] = useState("upload");
   const [transactions, setTransactions] = useState([]);
   const [selected, setSelected] = useState({});
   const [importing, setImporting] = useState(false);
@@ -39,7 +39,6 @@ export default function Import() {
       reader.onload = async (e) => {
         const base64 = e.target.result.split(",")[1];
         const mimeType = file.type;
-
         const resultado = await analizarExtracto(base64, mimeType);
 
         if (!resultado || !resultado.transactions || resultado.transactions.length === 0) {
@@ -64,6 +63,35 @@ export default function Import() {
   const importarSeleccionadas = async () => {
     setImporting(true);
     const seleccionadas = transactions.filter((_, i) => selected[i]);
+
+    // Crear meses necesarios automáticamente
+    const mesesNecesarios = new Set();
+    seleccionadas.forEach(t => {
+      const fecha = t.date ? new Date(t.date) : new Date();
+      mesesNecesarios.add(`${fecha.getFullYear()}-${fecha.getMonth()}`);
+    });
+
+    for (const mesKey of mesesNecesarios) {
+      const [year, month] = mesKey.split("-").map(Number);
+      const qm = query(
+        collection(db, "months"),
+        where("household", "==", "hogar_principal"),
+        where("year", "==", year),
+        where("month", "==", month)
+      );
+      const snap = await getDocs(qm);
+      if (snap.empty) {
+        await addDoc(collection(db, "months"), {
+          household: "hogar_principal",
+          year,
+          month,
+          status: "closed",
+          createdAt: Timestamp.now()
+        });
+      }
+    }
+
+    // Importar transacciones
     for (const t of seleccionadas) {
       const fecha = t.date ? new Date(t.date) : new Date();
       await addDoc(collection(db, "transactions"), {
@@ -76,6 +104,7 @@ export default function Import() {
         household: "hogar_principal",
       });
     }
+
     setImporting(false);
     setStep("done");
   };
@@ -97,7 +126,6 @@ export default function Import() {
           <p style={{ color: "#475569", fontSize: "13px", margin: 0 }}>Sube tu extracto bancario y lo analizamos con IA</p>
         </div>
 
-        {/* PASO 1: Upload */}
         {step === "upload" && (
           <>
             <label htmlFor="file-input"
@@ -120,7 +148,6 @@ export default function Import() {
               </div>
             )}
 
-            {/* Consejos */}
             <div style={{ ...glass, padding: "18px" }}>
               <p style={{ color: "#475569", fontSize: "11px", fontWeight: "600", letterSpacing: "0.08em", margin: "0 0 12px 0", textTransform: "uppercase" }}>Consejos para mejores resultados</p>
               {[
@@ -138,7 +165,6 @@ export default function Import() {
           </>
         )}
 
-        {/* PASO 2: Analizando */}
         {step === "analyzing" && (
           <div style={{ ...glass, padding: "50px 20px", textAlign: "center" }}>
             <div style={{ width: "56px", height: "56px", borderRadius: "16px", background: "linear-gradient(135deg, #6366f1, #06b6d4)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
@@ -150,7 +176,6 @@ export default function Import() {
           </div>
         )}
 
-        {/* PASO 3: Revisión */}
         {step === "review" && (
           <>
             <div style={{ ...glass, padding: "16px", marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "linear-gradient(135deg, rgba(52,211,153,0.08), rgba(6,182,212,0.05))" }}>
@@ -206,7 +231,6 @@ export default function Import() {
           </>
         )}
 
-        {/* PASO 4: Hecho */}
         {step === "done" && (
           <div style={{ ...glass, padding: "50px 20px", textAlign: "center" }}>
             <div style={{ width: "64px", height: "64px", borderRadius: "20px", background: "linear-gradient(135deg, #34d399, #06b6d4)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
