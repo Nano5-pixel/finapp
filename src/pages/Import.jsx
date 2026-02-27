@@ -26,6 +26,7 @@ export default function Import() {
   const [importing, setImporting] = useState(false);
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState("");
+  const [duplicados, setDuplicados] = useState(0);
   const user = auth.currentUser;
 
   const handleFile = async (file) => {
@@ -63,6 +64,7 @@ export default function Import() {
   const importarSeleccionadas = async () => {
     setImporting(true);
     const seleccionadas = transactions.filter((_, i) => selected[i]);
+    let contDuplicados = 0;
 
     // Crear meses necesarios automáticamente
     const mesesNecesarios = new Set();
@@ -91,20 +93,34 @@ export default function Import() {
       }
     }
 
-    // Importar transacciones
+    // Importar transacciones evitando duplicados
     for (const t of seleccionadas) {
       const fecha = t.date ? new Date(t.date) : new Date();
-      await addDoc(collection(db, "transactions"), {
-        type: t.type,
-        concept: t.concept,
-        amount: Number(t.amount),
-        category: t.category,
-        date: Timestamp.fromDate(fecha),
-        userId: user.uid,
-        household: "hogar_principal",
-      });
+
+      const qDup = query(
+        collection(db, "transactions"),
+        where("household", "==", "hogar_principal"),
+        where("concept", "==", t.concept),
+        where("amount", "==", Number(t.amount))
+      );
+      const snapDup = await getDocs(qDup);
+
+      if (snapDup.empty) {
+        await addDoc(collection(db, "transactions"), {
+          type: t.type,
+          concept: t.concept,
+          amount: Number(t.amount),
+          category: t.category,
+          date: Timestamp.fromDate(fecha),
+          userId: user.uid,
+          household: "hogar_principal",
+        });
+      } else {
+        contDuplicados++;
+      }
     }
 
+    setDuplicados(contDuplicados);
     setImporting(false);
     setStep("done");
   };
@@ -237,8 +253,11 @@ export default function Import() {
               <Check size={30} color="white" />
             </div>
             <p style={{ color: "#f1f5f9", fontSize: "18px", fontWeight: "700", margin: "0 0 8px 0" }}>¡Importación completada!</p>
+            {duplicados > 0 && (
+              <p style={{ color: "#fbbf24", fontSize: "13px", margin: "0 0 8px 0" }}>⚠️ {duplicados} transacciones duplicadas omitidas</p>
+            )}
             <p style={{ color: "#475569", fontSize: "14px", margin: "0 0 24px 0" }}>Las transacciones ya están en tu Dashboard</p>
-            <button onClick={() => { setStep("upload"); setTransactions([]); setSelected({}); setFileName(""); }}
+            <button onClick={() => { setStep("upload"); setTransactions([]); setSelected({}); setFileName(""); setDuplicados(0); }}
               style={{ padding: "12px 28px", borderRadius: "12px", border: "none", background: "linear-gradient(135deg, #6366f1, #06b6d4)", color: "white", fontWeight: "600", cursor: "pointer", fontSize: "14px" }}>
               Importar otro extracto
             </button>
