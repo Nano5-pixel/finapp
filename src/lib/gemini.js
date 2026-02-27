@@ -1,5 +1,5 @@
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 export async function analizarTexto(texto) {
   try {
@@ -35,14 +35,14 @@ export async function analizarExtracto(base64Data, mimeType) {
     const prompt = `Eres un asistente financiero experto. Analiza este extracto bancario y extrae TODAS las transacciones que encuentres.
 
 Para cada transacción identifica:
-- Si es un ingreso (nómina, transferencia recibida, intereses) → type: "income"
-- Si es un gasto (compra, pago, recibo) → type: "expense"  
+- Si es un ingreso → type: "income"
+- Si es un gasto → type: "expense"
 - Si es una inversión → type: "investment"
 - Si es ahorro → type: "saving"
 
 Categorías disponibles: Hogar, Alimentación, Transporte, Ocio, Salud, Suscripciones, Inversión, Ahorro, Otros
 
-Responde SOLO con un JSON válido, sin texto adicional, con esta estructura:
+Responde SOLO con un JSON válido con esta estructura:
 {
   "transactions": [
     {
@@ -62,12 +62,7 @@ Responde SOLO con un JSON válido, sin texto adicional, con esta estructura:
         contents: [{
           parts: [
             { text: prompt },
-            {
-              inline_data: {
-                mime_type: mimeType,
-                data: base64Data
-              }
-            }
+            { inline_data: { mime_type: mimeType, data: base64Data } }
           ]
         }]
       }),
