@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { auth, db } from "../lib/firebase";
 import { signOut } from "firebase/auth";
 import { collection, query, where, onSnapshot, getDoc, doc } from "firebase/firestore";
-import { LogOut, Home, TrendingUp, TrendingDown, PiggyBank, BarChart2, Copy } from "lucide-react";
+import { LogOut, Home, TrendingUp, TrendingDown, PiggyBank, BarChart2, Copy, Users } from "lucide-react";
 
 const glass = {
   backgroundColor: "rgba(15, 23, 42, 0.6)",
@@ -15,6 +15,7 @@ const glass = {
 export default function Profile({ householdId }) {
   const [transactions, setTransactions] = useState([]);
   const [household, setHousehold] = useState(null);
+  const [miembros, setMiembros] = useState([]);
   const [copiado, setCopiado] = useState(false);
   const user = auth.currentUser;
 
@@ -36,6 +37,21 @@ export default function Profile({ householdId }) {
     });
   }, [householdId]);
 
+  useEffect(() => {
+    if (!household?.members) return;
+    const fetchMiembros = async () => {
+      const datos = [];
+      for (const uid of household.members) {
+        const userDoc = await getDoc(doc(db, "users", uid));
+        if (userDoc.exists()) {
+          datos.push({ uid, ...userDoc.data() });
+        }
+      }
+      setMiembros(datos);
+    };
+    fetchMiembros();
+  }, [household]);
+
   const transaccionesMes = transactions.filter(t => {
     const f = t.date?.toDate?.() || new Date(t.date);
     return f.getMonth() === mesActual && f.getFullYear() === añoActual;
@@ -48,7 +64,7 @@ export default function Profile({ householdId }) {
   const inversiones = total("investment");
   const ahorro = total("saving");
 
-  const iniciales = user?.email?.slice(0, 2).toUpperCase() || "??";
+  const iniciales = (email) => email?.slice(0, 2).toUpperCase() || "??";
 
   const copiarCodigo = () => {
     navigator.clipboard.writeText(household?.codigo || "");
@@ -66,7 +82,7 @@ export default function Profile({ householdId }) {
 
         <div style={{ ...glass, padding: "20px", marginBottom: "12px", display: "flex", alignItems: "center", gap: "16px" }}>
           <div style={{ width: "60px", height: "60px", borderRadius: "18px", background: "linear-gradient(135deg, #6366f1, #06b6d4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <span style={{ color: "white", fontSize: "20px", fontWeight: "800" }}>{iniciales}</span>
+            <span style={{ color: "white", fontSize: "20px", fontWeight: "800" }}>{iniciales(user?.email)}</span>
           </div>
           <div>
             <p style={{ color: "#f1f5f9", fontSize: "15px", fontWeight: "600", margin: 0 }}>{user?.email}</p>
@@ -82,16 +98,35 @@ export default function Profile({ householdId }) {
               </div>
               <p style={{ color: "#f1f5f9", fontSize: "15px", fontWeight: "600", margin: 0 }}>{household.nombre}</p>
             </div>
+
             <p style={{ color: "#475569", fontSize: "12px", margin: "0 0 12px 0" }}>
               Comparte este código con tu pareja para que se una al hogar
             </p>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: "12px", padding: "12px 16px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: "12px", padding: "12px 16px", marginBottom: "16px" }}>
               <p style={{ color: "#6366f1", fontSize: "22px", fontWeight: "800", letterSpacing: "0.2em", margin: 0 }}>{household.codigo}</p>
               <button onClick={copiarCodigo}
                 style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", color: copiado ? "#34d399" : "#475569", cursor: "pointer", fontSize: "12px", fontWeight: "600" }}>
                 <Copy size={14} />
                 {copiado ? "¡Copiado!" : "Copiar"}
               </button>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+              <Users size={14} color="#475569" />
+              <p style={{ color: "#475569", fontSize: "12px", fontWeight: "600", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>Miembros del hogar</p>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {miembros.map((m) => (
+                <div key={m.uid} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", backgroundColor: "rgba(255,255,255,0.03)", borderRadius: "10px", border: m.uid === user.uid ? "1px solid rgba(99,102,241,0.2)" : "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ width: "32px", height: "32px", borderRadius: "10px", background: m.uid === user.uid ? "linear-gradient(135deg, #6366f1, #06b6d4)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <span style={{ color: "white", fontSize: "11px", fontWeight: "700" }}>{iniciales(m.email)}</span>
+                  </div>
+                  <p style={{ color: m.uid === user.uid ? "#f1f5f9" : "#64748b", fontSize: "13px", margin: 0, flex: 1 }}>{m.email}</p>
+                  {m.uid === user.uid && (
+                    <span style={{ color: "#6366f1", fontSize: "10px", fontWeight: "600", backgroundColor: "rgba(99,102,241,0.1)", padding: "2px 8px", borderRadius: "6px" }}>Tú</span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -130,7 +165,7 @@ export default function Profile({ householdId }) {
         </div>
 
         <button onClick={() => signOut(auth)}
-          style={{ width: "100%", backgroundColor: "rgba(251,113,133,0.08)", border: "1px solid rgba(251,113,133,0.2)", borderRadius: "16px", padding: "16px", color: "#fb7185", fontSize: "15px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", transition: "opacity 0.2s" }}>
+          style={{ width: "100%", backgroundColor: "rgba(251,113,133,0.08)", border: "1px solid rgba(251,113,133,0.2)", borderRadius: "16px", padding: "16px", color: "#fb7185", fontSize: "15px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
           <LogOut size={18} />
           Cerrar sesión
         </button>
