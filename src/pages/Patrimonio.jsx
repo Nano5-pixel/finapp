@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { db } from "../lib/firebase";
-import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";import { TrendingUp, PiggyBank, Wallet, BarChart2, ChevronDown, ChevronUp } from "lucide-react";
+import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
+import { TrendingUp, PiggyBank, Wallet, BarChart2, ChevronDown, ChevronUp } from "lucide-react";
 
 const glass = {
   backgroundColor: "rgba(15, 23, 42, 0.6)",
@@ -10,49 +11,36 @@ const glass = {
   borderRadius: "20px",
 };
 
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
 export default function Patrimonio({ householdId }) {
   const [transactions, setTransactions] = useState([]);
   const [investments, setInvestments] = useState([]);
   const [huchas, setHuchas] = useState([]);
-  const [prices, setPrices] = useState({});
   const [expandido, setExpandido] = useState(null);
 
   useEffect(() => {
     if (!householdId) return;
     const unsub1 = onSnapshot(query(collection(db, "transactions"), where("household", "==", householdId)), snap => setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsub2 = onSnapshot(query(collection(db, "investments"), where("household", "==", householdId), orderBy("año", "desc"), orderBy("mes", "desc")), snap => setInvestments(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsub2 = onSnapshot(query(collection(db, "investments"), where("household", "==", householdId)), snap => {
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const sorted = docs.sort((a, b) => b.año !== a.año ? b.año - a.año : b.mes - a.mes);
+      setInvestments(sorted);
+    });
     const unsub3 = onSnapshot(query(collection(db, "huchas"), where("household", "==", householdId)), snap => setHuchas(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     return () => { unsub1(); unsub2(); unsub3(); };
   }, [householdId]);
-
-  useEffect(() => {
-    if (investments.length > 0) fetchPrices();
-  }, [investments]);
-
-  const fetchPrices = async () => {
-    const newPrices = {};
-    for (const pos of investments) {
-      try {
-        const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${pos.ticker}?interval=1d&range=1d`)}`);
-        const data = await res.json();
-        const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-        if (price) newPrices[pos.ticker] = price;
-      } catch {}
-    }
-    setPrices(newPrices);
-  };
 
   const transaccionesAhorro = transactions.filter(t => t.type === "saving");
   const totalAhorro = transaccionesAhorro.reduce((a, t) => a + Number(t.amount), 0);
 
   const totalInversiones = investments.length > 0 ? investments[0].valor || 0 : 0;
-const rentabilidad = investments.length > 1 ? totalInversiones - investments[1].valor : 0;
+  const rentabilidad = investments.length > 1 ? totalInversiones - investments[1].valor : 0;
 
   const totalHuchas = huchas.reduce((a, h) => a + h.saldo, 0);
   const patrimonioTotal = totalAhorro + totalInversiones + totalHuchas;
 
   const porcentaje = (valor) => patrimonioTotal > 0 ? (valor / patrimonioTotal) * 100 : 0;
-
   const toggleExpandido = (key) => setExpandido(expandido === key ? null : key);
 
   const formatFecha = (date) => {
@@ -75,7 +63,7 @@ const rentabilidad = investments.length > 1 ? totalInversiones - investments[1].
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
             <BarChart2 size={14} color="#6366f1" />
             <p style={{ color: "#6366f1", fontSize: "13px", margin: 0, fontWeight: "600" }}>
-              {investments.length} ETF{investments.length !== 1 ? "s" : ""} · {huchas.length} hucha{huchas.length !== 1 ? "s" : ""}
+              {investments.length} registro{investments.length !== 1 ? "s" : ""} · {huchas.length} hucha{huchas.length !== 1 ? "s" : ""}
             </p>
           </div>
         </div>
@@ -150,7 +138,7 @@ const rentabilidad = investments.length > 1 ? totalInversiones - investments[1].
               <div>
                 <p style={{ color: "#f1f5f9", fontSize: "15px", fontWeight: "600", margin: 0 }}>Inversiones</p>
                 <p style={{ color: rentabilidad >= 0 ? "#34d399" : "#fb7185", fontSize: "12px", margin: "2px 0 0 0" }}>
-                  Rentabilidad: {rentabilidad >= 0 ? "+" : ""}{rentabilidad.toFixed(2)}€
+                  vs mes anterior: {rentabilidad >= 0 ? "+" : ""}{rentabilidad.toFixed(2)}€
                 </p>
               </div>
             </div>
@@ -162,19 +150,22 @@ const rentabilidad = investments.length > 1 ? totalInversiones - investments[1].
           {expandido === "inversiones" && (
             <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "8px 16px" }}>
               {investments.length === 0 && (
-                <p style={{ color: "#334155", fontSize: "13px", textAlign: "center", padding: "16px 0" }}>No hay inversiones registradas</p>
+                <p style={{ color: "#334155", fontSize: "13px", textAlign: "center", padding: "16px 0" }}>No hay registros de inversión</p>
               )}
-              {investments.map(p => {
-                const precioActual = prices[p.ticker] || p.buyPrice;
-                const valorActual = p.shares * precioActual;
-                const ganancia = valorActual - p.shares * p.buyPrice;
+              {investments.map((inv, i) => {
+                const anterior = investments[i + 1];
+                const diff = anterior ? inv.valor - anterior.valor : null;
                 return (
-                  <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div key={inv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                     <div>
-                      <p style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: "500", margin: 0 }}>{p.ticker}</p>
-                      <p style={{ color: "#475569", fontSize: "11px", margin: 0 }}>{p.shares} participaciones · {ganancia >= 0 ? "+" : ""}{ganancia.toFixed(2)}€</p>
+                      <p style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: "500", margin: 0 }}>{MESES[inv.mes]} {inv.año}</p>
+                      {diff !== null && (
+                        <p style={{ color: diff >= 0 ? "#34d399" : "#fb7185", fontSize: "11px", margin: 0 }}>
+                          {diff >= 0 ? "+" : ""}{diff.toFixed(2)}€ vs mes anterior
+                        </p>
+                      )}
                     </div>
-                    <p style={{ color: "#818cf8", fontSize: "13px", fontWeight: "700", margin: 0 }}>{valorActual.toFixed(0)}€</p>
+                    <p style={{ color: "#818cf8", fontSize: "13px", fontWeight: "700", margin: 0 }}>{inv.valor.toFixed(0)}€</p>
                   </div>
                 );
               })}
