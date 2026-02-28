@@ -13,7 +13,9 @@ import Profile from "./pages/Profile";
 import Goals from "./pages/Goals";
 import Investments from "./pages/Investments";
 import Import from "./pages/Import";
-import { LayoutDashboard, BarChart2, BookOpen, Target, RefreshCw, UserCircle, Trophy, TrendingUp, FileUp } from "lucide-react";
+import Huchas from "./pages/Huchas";
+import Patrimonio from "./pages/Patrimonio";
+import { LayoutDashboard, BarChart2, BookOpen, Target, RefreshCw, UserCircle, Trophy, TrendingUp, FileUp, PiggyBank, Landmark } from "lucide-react";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -55,6 +57,8 @@ function App() {
     { key: "dashboard", icon: LayoutDashboard, label: "Inicio" },
     { key: "reports", icon: BarChart2, label: "Reportes" },
     { key: "investments", icon: TrendingUp, label: "Inversiones" },
+    { key: "patrimonio", icon: Landmark, label: "Patrimonio" },
+    { key: "huchas", icon: PiggyBank, label: "Huchas" },
     { key: "import", icon: FileUp, label: "Importar" },
     { key: "budget", icon: Target, label: "Presupuesto" },
     { key: "goals", icon: Trophy, label: "Metas" },
@@ -74,6 +78,8 @@ function App() {
       {page === "goals" && <Goals householdId={householdId} />}
       {page === "investments" && <Investments householdId={householdId} />}
       {page === "import" && <Import householdId={householdId} />}
+      {page === "huchas" && <Huchas householdId={householdId} />}
+      {page === "patrimonio" && <Patrimonio householdId={householdId} />}
 
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, backgroundColor: "rgba(2,6,23,0.90)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: "1px solid rgba(255,255,255,0.06)", zIndex: 100, padding: "10px 0 20px 0", overflowX: "auto" }}>
         <div style={{ display: "flex", gap: "4px", minWidth: "max-content", padding: "0 16px" }}>
@@ -89,4 +95,5 @@ function App() {
     </div>
   );
 }
+
 export default App;
