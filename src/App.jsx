@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { auth } from "./lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { obtenerHogar } from "./lib/household";
 import Login from "./pages/Login";
+import Household from "./pages/Household";
 import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
 import History from "./pages/History";
@@ -16,11 +18,18 @@ import { LayoutDashboard, BarChart2, BookOpen, Target, RefreshCw, UserCircle, Tr
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [householdId, setHouseholdId] = useState(null);
   const [page, setPage] = useState("dashboard");
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        const hId = await obtenerHogar(currentUser.uid);
+        setHouseholdId(hId);
+      } else {
+        setHouseholdId(null);
+      }
       setLoading(false);
     });
     return unsubscribe;
@@ -40,6 +49,7 @@ function App() {
   }
 
   if (!user) return <Login />;
+  if (!householdId) return <Household onComplete={(hId) => setHouseholdId(hId)} />;
 
   const navItems = [
     { key: "dashboard", icon: LayoutDashboard, label: "Inicio" },
@@ -55,46 +65,21 @@ function App() {
 
   return (
     <div style={{ minHeight: "100vh" }}>
-      {page === "dashboard" && <Dashboard />}
-      {page === "reports" && <Reports />}
-      {page === "history" && <History />}
-      {page === "budget" && <Budget />}
-      {page === "recurring" && <Recurring />}
-      {page === "profile" && <Profile />}
-      {page === "goals" && <Goals />}
-      {page === "investments" && <Investments />}
-      {page === "import" && <Import />}
+      {page === "dashboard" && <Dashboard householdId={householdId} />}
+      {page === "reports" && <Reports householdId={householdId} />}
+      {page === "history" && <History householdId={householdId} />}
+      {page === "budget" && <Budget householdId={householdId} />}
+      {page === "recurring" && <Recurring householdId={householdId} />}
+      {page === "profile" && <Profile householdId={householdId} />}
+      {page === "goals" && <Goals householdId={householdId} />}
+      {page === "investments" && <Investments householdId={householdId} />}
+      {page === "import" && <Import householdId={householdId} />}
 
-      {/* Barra de navegación inferior con scroll horizontal */}
-      <div style={{
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: "rgba(2,6,23,0.90)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-        zIndex: 100,
-        padding: "10px 0 20px 0",
-        overflowX: "auto",
-      }}>
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, backgroundColor: "rgba(2,6,23,0.90)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: "1px solid rgba(255,255,255,0.06)", zIndex: 100, padding: "10px 0 20px 0", overflowX: "auto" }}>
         <div style={{ display: "flex", gap: "4px", minWidth: "max-content", padding: "0 16px" }}>
           {navItems.map(({ key, icon: Icon, label }) => (
             <button key={key} onClick={() => setPage(key)}
-              style={{
-                background: page === key ? "rgba(99,102,241,0.15)" : "none",
-                border: page === key ? "1px solid rgba(99,102,241,0.2)" : "1px solid transparent",
-                borderRadius: "12px",
-                cursor: "pointer",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "3px",
-                padding: "6px 14px",
-                transition: "all 0.2s",
-                minWidth: "60px"
-              }}>
+              style={{ background: page === key ? "rgba(99,102,241,0.15)" : "none", border: page === key ? "1px solid rgba(99,102,241,0.2)" : "1px solid transparent", borderRadius: "12px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px", padding: "6px 14px", transition: "all 0.2s", minWidth: "60px" }}>
               <Icon size={20} color={page === key ? "#6366f1" : "#334155"} />
               <span style={{ fontSize: "9px", color: page === key ? "#6366f1" : "#334155", fontWeight: "500", whiteSpace: "nowrap" }}>{label}</span>
             </button>
@@ -104,5 +89,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
