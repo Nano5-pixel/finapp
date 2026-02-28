@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { db } from "../lib/firebase";
 import { collection, query, where, onSnapshot, orderBy, deleteDoc, updateDoc, doc } from "firebase/firestore";
-import { ChevronDown, ChevronUp, Lock, Unlock, Trash2, Pencil, Check, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Lock, Unlock, Trash2, Pencil, X } from "lucide-react";
 
 const glass = {
   backgroundColor: "rgba(15, 23, 42, 0.6)",
@@ -12,10 +12,9 @@ const glass = {
 };
 
 const CATEGORIAS = ["Hogar", "Alimentación", "Transporte", "Ocio", "Salud", "Suscripciones", "Inversión", "Ahorro", "Otros"];
-
 const MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-export default function History() {
+export default function History({ householdId }) {
   const [months, setMonths] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [expanded, setExpanded] = useState(null);
@@ -23,20 +22,22 @@ export default function History() {
   const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
-    const qm = query(collection(db, "months"), where("household", "==", "hogar_principal"), orderBy("year", "desc"), orderBy("month", "desc"));
+    if (!householdId) return;
+    const qm = query(collection(db, "months"), where("household", "==", householdId), orderBy("year", "desc"), orderBy("month", "desc"));
     const unsub = onSnapshot(qm, snap => {
       setMonths(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return unsub;
-  }, []);
+  }, [householdId]);
 
   useEffect(() => {
-    const qt = query(collection(db, "transactions"), where("household", "==", "hogar_principal"), orderBy("date", "desc"));
+    if (!householdId) return;
+    const qt = query(collection(db, "transactions"), where("household", "==", householdId), orderBy("date", "desc"));
     const unsub = onSnapshot(qt, snap => {
       setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return unsub;
-  }, []);
+  }, [householdId]);
 
   const getTransaccionesMes = (year, month) => {
     return transactions.filter(t => {
@@ -59,12 +60,7 @@ export default function History() {
 
   const iniciarEdicion = (t) => {
     setEditando(t.id);
-    setEditForm({
-      concept: t.concept,
-      amount: t.amount,
-      category: t.category,
-      type: t.type,
-    });
+    setEditForm({ concept: t.concept, amount: t.amount, category: t.category, type: t.type });
   };
 
   const guardarEdicion = async (id) => {
@@ -113,7 +109,6 @@ export default function History() {
 
           return (
             <div key={m.id} style={{ ...glass, marginBottom: "12px", overflow: "hidden" }}>
-              {/* Cabecera mes */}
               <div onClick={() => toggleMes(m.id)}
                 style={{ padding: "16px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -133,7 +128,6 @@ export default function History() {
                 </div>
               </div>
 
-              {/* Resumen */}
               {isExpanded && (
                 <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", backgroundColor: "rgba(255,255,255,0.04)" }}>
@@ -149,7 +143,6 @@ export default function History() {
                     ))}
                   </div>
 
-                  {/* Botón cerrar/abrir */}
                   <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                     <button onClick={() => toggleStatus(m)}
                       style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "none", background: m.status === "closed" ? "linear-gradient(135deg, rgba(52,211,153,0.15), rgba(6,182,212,0.1))" : "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(6,182,212,0.1))", color: m.status === "closed" ? "#34d399" : "#818cf8", fontWeight: "600", fontSize: "13px", cursor: "pointer" }}>
@@ -157,7 +150,6 @@ export default function History() {
                     </button>
                   </div>
 
-                  {/* Lista transacciones */}
                   <div style={{ padding: "8px 12px" }}>
                     {txs.length === 0 && (
                       <p style={{ color: "#334155", fontSize: "13px", textAlign: "center", padding: "20px 0" }}>No hay transacciones</p>
