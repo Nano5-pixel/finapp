@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { db } from "../lib/firebase";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { TrendingUp, PiggyBank, Wallet, BarChart2, ChevronDown, ChevronUp } from "lucide-react";
+import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";import { TrendingUp, PiggyBank, Wallet, BarChart2, ChevronDown, ChevronUp } from "lucide-react";
 
 const glass = {
   backgroundColor: "rgba(15, 23, 42, 0.6)",
