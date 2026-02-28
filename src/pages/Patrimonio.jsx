@@ -21,7 +21,7 @@ export default function Patrimonio({ householdId }) {
   useEffect(() => {
     if (!householdId) return;
     const unsub1 = onSnapshot(query(collection(db, "transactions"), where("household", "==", householdId)), snap => setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsub2 = onSnapshot(query(collection(db, "investments"), where("household", "==", householdId)), snap => setInvestments(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsub2 = onSnapshot(query(collection(db, "investments"), where("household", "==", householdId), orderBy("año", "desc"), orderBy("mes", "desc")), snap => setInvestments(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsub3 = onSnapshot(query(collection(db, "huchas"), where("household", "==", householdId)), snap => setHuchas(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     return () => { unsub1(); unsub2(); unsub3(); };
   }, [householdId]);
@@ -46,12 +46,8 @@ export default function Patrimonio({ householdId }) {
   const transaccionesAhorro = transactions.filter(t => t.type === "saving");
   const totalAhorro = transaccionesAhorro.reduce((a, t) => a + Number(t.amount), 0);
 
-  const totalInversiones = investments.reduce((a, p) => {
-    const precioActual = prices[p.ticker] || p.buyPrice;
-    return a + p.shares * precioActual;
-  }, 0);
-  const totalInvertido = investments.reduce((a, p) => a + p.shares * p.buyPrice, 0);
-  const rentabilidad = totalInversiones - totalInvertido;
+  const totalInversiones = investments.length > 0 ? investments[0].valor || 0 : 0;
+const rentabilidad = investments.length > 1 ? totalInversiones - investments[1].valor : 0;
 
   const totalHuchas = huchas.reduce((a, h) => a + h.saldo, 0);
   const patrimonioTotal = totalAhorro + totalInversiones + totalHuchas;
