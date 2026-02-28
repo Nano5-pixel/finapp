@@ -3,7 +3,7 @@ import { db } from "../lib/firebase";
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
 import { Plus, X, Trash2 } from "lucide-react";
 
-const EMOJIS = ["🎯", "✈️", "🏠", "🚗", "💻", "👶", "🎓", "💍", "🏖️", "🛋️"];
+const EMOJIS = ["🎯", "✈️", "🏠", "🚗", "💻", "👶", "🎓", "💍", "🖥️", "🛋️"];
 
 const glass = {
   backgroundColor: "rgba(15, 23, 42, 0.6)",
@@ -13,7 +13,7 @@ const glass = {
   borderRadius: "20px",
 };
 
-export default function Goals() {
+export default function Goals({ householdId }) {
   const [goals, setGoals] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", target: "", saved: "0", emoji: "🎯" });
@@ -21,15 +21,16 @@ export default function Goals() {
   const [showAporte, setShowAporte] = useState({});
 
   useEffect(() => {
-    const q = query(collection(db, "goals"), where("household", "==", "hogar_principal"));
+    if (!householdId) return;
+    const q = query(collection(db, "goals"), where("household", "==", householdId));
     const unsub = onSnapshot(q, snap => setGoals(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     return unsub;
-  }, []);
+  }, [householdId]);
 
   const guardar = async () => {
     if (!form.name || !form.target) return;
     await addDoc(collection(db, "goals"), {
-      household: "hogar_principal",
+      household: householdId,
       name: form.name,
       target: Number(form.target),
       saved: Number(form.saved),

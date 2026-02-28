@@ -14,14 +14,15 @@ const glass = {
   borderRadius: "20px",
 };
 
-export default function Reports() {
+export default function Reports({ householdId }) {
   const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
-    const q = query(collection(db, "transactions"), where("household", "==", "hogar_principal"));
+    if (!householdId) return;
+    const q = query(collection(db, "transactions"), where("household", "==", householdId));
     const unsub = onSnapshot(q, snap => setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     return unsub;
-  }, []);
+  }, [householdId]);
 
   const now = new Date();
   const mesActual = now.getMonth();
@@ -65,7 +66,6 @@ export default function Reports() {
           </p>
         </div>
 
-        {/* Gráfica dona */}
         <div style={{ ...glass, padding: "20px", marginBottom: "14px" }}>
           <p style={{ color: "#475569", fontSize: "11px", fontWeight: "600", letterSpacing: "0.08em", margin: "0 0 16px 0", textTransform: "uppercase" }}>Gastos por categoría</p>
           {donaData.length === 0 ? (
@@ -92,7 +92,6 @@ export default function Reports() {
           )}
         </div>
 
-        {/* Gráfica barras */}
         <div style={{ ...glass, padding: "20px" }}>
           <p style={{ color: "#475569", fontSize: "11px", fontWeight: "600", letterSpacing: "0.08em", margin: "0 0 16px 0", textTransform: "uppercase" }}>Ingresos vs Gastos</p>
           <ResponsiveContainer width="100%" height={200}>

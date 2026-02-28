@@ -13,7 +13,7 @@ const glass = {
   borderRadius: "20px",
 };
 
-export default function Budget() {
+export default function Budget({ householdId }) {
   const [budgets, setBudgets] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -24,12 +24,13 @@ export default function Budget() {
   const añoActual = now.getFullYear();
 
   useEffect(() => {
-    const qb = query(collection(db, "budgets"), where("household", "==", "hogar_principal"));
+    if (!householdId) return;
+    const qb = query(collection(db, "budgets"), where("household", "==", householdId));
     const unsub1 = onSnapshot(qb, snap => setBudgets(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const qt = query(collection(db, "transactions"), where("household", "==", "hogar_principal"));
+    const qt = query(collection(db, "transactions"), where("household", "==", householdId));
     const unsub2 = onSnapshot(qt, snap => setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     return () => { unsub1(); unsub2(); };
-  }, []);
+  }, [householdId]);
 
   const gastoCategoria = (category) => transactions
     .filter(t => {
@@ -45,7 +46,7 @@ export default function Budget() {
     if (existente) {
       await updateDoc(doc(db, "budgets", existente.id), { limit: Number(form.limit) });
     } else {
-      await addDoc(collection(db, "budgets"), { household: "hogar_principal", category: form.category, limit: Number(form.limit) });
+      await addDoc(collection(db, "budgets"), { household: householdId, category: form.category, limit: Number(form.limit) });
     }
     setForm({ category: "Alimentación", limit: "" });
     setShowForm(false);
@@ -99,7 +100,7 @@ export default function Budget() {
 
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <p style={{ color, fontSize: "12px", fontWeight: "600", margin: 0 }}>
-                  {porcentaje >= 100 ? "⚠️ Límite superado" : porcentaje >= 80 ? "⚠️ Casi al límite" : `${porcentaje.toFixed(0)}% usado`}
+                  {porcentaje >= 100 ? "⚠️ Límite superado" : porcentaje >= 80 ? "⚠ Casi al límite" : `${porcentaje.toFixed(0)}% usado`}
                 </p>
                 <p style={{ color: restante >= 0 ? "#475569" : "#fb7185", fontSize: "12px", margin: 0 }}>
                   {restante >= 0 ? `${restante.toFixed(0)}€ restantes` : `${Math.abs(restante).toFixed(0)}€ excedido`}

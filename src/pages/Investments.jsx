@@ -14,7 +14,17 @@ const glass = {
 
 const PROXY = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
-export default function Investments() {
+const TICKERS_POPULARES = [
+  { ticker: "CSPX.L", name: "Core S&P 500 USD (Acc)" },
+  { ticker: "VZLD.DE", name: "Strategic Metals USD-EUR" },
+  { ticker: "SEMI.L", name: "Semiconductor USD (Acc)" },
+  { ticker: "EUNK.DE", name: "Core MSCI Europe EUR (Acc)" },
+  { ticker: "VWCE.DE", name: "Vanguard FTSE All-World" },
+  { ticker: "IWDA.AS", name: "iShares Core MSCI World" },
+  { ticker: "VUSA.AS", name: "Vanguard S&P 500" },
+];
+
+export default function Investments({ householdId }) {
   const [positions, setPositions] = useState([]);
   const [prices, setPrices] = useState({});
   const [history, setHistory] = useState([]);
@@ -25,12 +35,13 @@ export default function Investments() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, "investments"), where("household", "==", "hogar_principal"));
+    if (!householdId) return;
+    const q = query(collection(db, "investments"), where("household", "==", householdId));
     const unsub = onSnapshot(q, snap => {
       setPositions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return unsub;
-  }, []);
+  }, [householdId]);
 
   useEffect(() => {
     if (positions.length > 0) fetchPrices();
@@ -40,11 +51,8 @@ export default function Investments() {
     try {
       const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(`${PROXY}${ticker}?interval=1d&range=1d`)}`);
       const data = await res.json();
-      const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-      return price || null;
-    } catch {
-      return null;
-    }
+      return data?.chart?.result?.[0]?.meta?.regularMarketPrice || null;
+    } catch { return null; }
   };
 
   const fetchHistory = async (ticker) => {
@@ -58,9 +66,7 @@ export default function Investments() {
         fecha: new Date(t * 1000).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit" }),
         precio: closes[i] ? Number(closes[i].toFixed(2)) : null,
       })).filter(d => d.precio !== null);
-    } catch {
-      return [];
-    }
+    } catch { return []; }
   };
 
   const fetchPrices = async () => {
@@ -71,7 +77,6 @@ export default function Investments() {
       if (price) newPrices[pos.ticker] = price;
     }
     setPrices(newPrices);
-
     if (positions[0]) {
       const hist = await fetchHistory(positions[0].ticker);
       setHistory(hist);
@@ -82,7 +87,7 @@ export default function Investments() {
   const guardar = async () => {
     if (!form.ticker || !form.shares || !form.buyPrice) return;
     await addDoc(collection(db, "investments"), {
-      household: "hogar_principal",
+      household: householdId,
       ticker: form.ticker.toUpperCase(),
       name: form.name || form.ticker.toUpperCase(),
       shares: Number(form.shares),
@@ -106,21 +111,10 @@ export default function Investments() {
   const rentabilidadTotal = totalActual - totalInvertido;
   const rentabilidadPct = totalInvertido > 0 ? (rentabilidadTotal / totalInvertido) * 100 : 0;
 
-  const TICKERS_POPULARES = [
-  { ticker: "CSPX.L", name: "Core S&P 500 USD (Acc)" },
-  { ticker: "VZLD.DE", name: "Strategic Metals USD-EUR" },
-  { ticker: "SEMI.L", name: "Semiconductor USD (Acc)" },
-  { ticker: "EUNK.DE", name: "Core MSCI Europe EUR (Acc)" },
-  { ticker: "VWCE.DE", name: "Vanguard FTSE All-World" },
-  { ticker: "IWDA.AS", name: "iShares Core MSCI World" },
-  { ticker: "VUSA.AS", name: "Vanguard S&P 500" },
-];
-
   return (
     <div style={{ minHeight: "100vh" }}>
       <div style={{ maxWidth: "480px", margin: "0 auto", padding: "0 16px 140px 16px" }}>
 
-        {/* Header */}
         <div style={{ paddingTop: "28px", paddingBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div>
             <h1 style={{ color: "#f1f5f9", fontSize: "20px", fontWeight: "700", margin: 0, letterSpacing: "-0.5px" }}>Inversiones</h1>
@@ -132,7 +126,6 @@ export default function Investments() {
           </button>
         </div>
 
-        {/* Resumen portfolio */}
         {positions.length > 0 && (
           <div style={{ ...glass, padding: "20px", marginBottom: "14px", background: rentabilidadTotal >= 0 ? "linear-gradient(135deg, rgba(52,211,153,0.08), rgba(6,182,212,0.05))" : "linear-gradient(135deg, rgba(251,113,133,0.08), rgba(239,68,68,0.05))" }}>
             <p style={{ color: "#475569", fontSize: "11px", fontWeight: "600", letterSpacing: "0.08em", margin: "0 0 12px 0", textTransform: "uppercase" }}>Resumen portfolio</p>
@@ -158,7 +151,6 @@ export default function Investments() {
           </div>
         )}
 
-        {/* Gráfica histórico */}
         {history.length > 0 && (
           <div style={{ ...glass, padding: "20px", marginBottom: "14px" }}>
             <p style={{ color: "#475569", fontSize: "11px", fontWeight: "600", letterSpacing: "0.08em", margin: "0 0 16px 0", textTransform: "uppercase" }}>
@@ -182,7 +174,6 @@ export default function Investments() {
           </div>
         )}
 
-        {/* Botón añadir */}
         <button onClick={() => setShowForm(true)}
           style={{ ...glass, width: "100%", border: "1px dashed rgba(99,102,241,0.4)", borderRadius: "16px", padding: "14px", color: "#6366f1", fontSize: "14px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "16px", backgroundColor: "rgba(99,102,241,0.05)" }}>
           <Plus size={18} /> Añadir ETF
@@ -194,7 +185,6 @@ export default function Investments() {
           </div>
         )}
 
-        {/* Lista posiciones */}
         {positions.map(p => {
           const precioActual = prices[p.ticker] || p.buyPrice;
           const valorActual = p.shares * precioActual;
@@ -216,8 +206,7 @@ export default function Investments() {
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: "8px" }}>
-                  <button onClick={() => { setShowEditPrice(p.id); setNewPrice(p.buyPrice); }}
-                    style={{ background: "none", border: "none", cursor: "pointer" }}>
+                  <button onClick={() => { setShowEditPrice(p.id); setNewPrice(p.buyPrice); }} style={{ background: "none", border: "none", cursor: "pointer" }}>
                     <Pencil size={14} color="#334155" />
                   </button>
                   <button onClick={() => eliminar(p.id)} style={{ background: "none", border: "none", cursor: "pointer" }}>
@@ -256,7 +245,6 @@ export default function Investments() {
                 </span>
               </div>
 
-              {/* Editar precio de compra */}
               {showEditPrice === p.id && (
                 <div style={{ marginTop: "10px", display: "flex", gap: "8px" }}>
                   <input placeholder="Nuevo precio medio €" type="number" value={newPrice}
@@ -277,7 +265,6 @@ export default function Investments() {
         })}
       </div>
 
-      {/* Modal añadir ETF */}
       {showForm && (
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(2,6,23,0.8)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 200 }}>
           <div style={{ width: "100%", maxWidth: "480px", backgroundColor: "#0f172a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "28px 28px 0 0", padding: "24px" }}>
@@ -288,7 +275,6 @@ export default function Investments() {
               </button>
             </div>
 
-            {/* ETFs populares */}
             <p style={{ color: "#64748b", fontSize: "12px", margin: "0 0 8px 0" }}>ETFs populares en Trade Republic</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
               {TICKERS_POPULARES.map(t => (
@@ -300,17 +286,13 @@ export default function Investments() {
             </div>
 
             <p style={{ color: "#64748b", fontSize: "12px", margin: "0 0 8px 0" }}>O escribe el ticker manualmente</p>
-            <input placeholder="Ej: VWCE.DE, IWDA.AS..." value={form.ticker}
-              onChange={e => setForm({ ...form, ticker: e.target.value })}
+            <input placeholder="Ej: VWCE.DE, IWDA.AS..." value={form.ticker} onChange={e => setForm({ ...form, ticker: e.target.value })}
               style={{ width: "100%", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "12px 16px", color: "#f1f5f9", fontSize: "14px", outline: "none", marginBottom: "10px", boxSizing: "border-box" }} />
-            <input placeholder="Nombre del ETF" value={form.name}
-              onChange={e => setForm({ ...form, name: e.target.value })}
+            <input placeholder="Nombre del ETF" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
               style={{ width: "100%", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "12px 16px", color: "#f1f5f9", fontSize: "14px", outline: "none", marginBottom: "10px", boxSizing: "border-box" }} />
-            <input placeholder="Número de participaciones" type="number" value={form.shares}
-              onChange={e => setForm({ ...form, shares: e.target.value })}
+            <input placeholder="Número de participaciones" type="number" value={form.shares} onChange={e => setForm({ ...form, shares: e.target.value })}
               style={{ width: "100%", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "12px 16px", color: "#f1f5f9", fontSize: "14px", outline: "none", marginBottom: "10px", boxSizing: "border-box" }} />
-            <input placeholder="Precio medio de compra en €" type="number" value={form.buyPrice}
-              onChange={e => setForm({ ...form, buyPrice: e.target.value })}
+            <input placeholder="Precio medio de compra en €" type="number" value={form.buyPrice} onChange={e => setForm({ ...form, buyPrice: e.target.value })}
               style={{ width: "100%", backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "12px 16px", color: "#f1f5f9", fontSize: "14px", outline: "none", marginBottom: "20px", boxSizing: "border-box" }} />
 
             <div style={{ display: "flex", gap: "10px" }}>
@@ -326,6 +308,8 @@ export default function Investments() {
           </div>
         </div>
       )}
+
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

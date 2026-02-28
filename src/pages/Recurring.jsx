@@ -19,7 +19,7 @@ const glass = {
   borderRadius: "20px",
 };
 
-export default function Recurring() {
+export default function Recurring({ householdId }) {
   const [recurrentes, setRecurrentes] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -32,12 +32,13 @@ export default function Recurring() {
   const añoActual = now.getFullYear();
 
   useEffect(() => {
-    const qr = query(collection(db, "recurring"), where("household", "==", "hogar_principal"));
+    if (!householdId) return;
+    const qr = query(collection(db, "recurring"), where("household", "==", householdId));
     const unsub1 = onSnapshot(qr, snap => setRecurrentes(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const qt = query(collection(db, "transactions"), where("household", "==", "hogar_principal"));
+    const qt = query(collection(db, "transactions"), where("household", "==", householdId));
     const unsub2 = onSnapshot(qt, snap => setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     return () => { unsub1(); unsub2(); };
-  }, []);
+  }, [householdId]);
 
   const yaAplicadoEsteMes = (recurringId) => transactions.some(t => {
     const f = t.date?.toDate?.() || new Date(t.date);
@@ -50,7 +51,7 @@ export default function Recurring() {
     for (const r of pendientes) {
       await addDoc(collection(db, "transactions"), {
         type: r.type, concept: r.concept, amount: Number(r.amount), category: r.category,
-        date: Timestamp.now(), userId: user.uid, household: "hogar_principal", recurringId: r.id,
+        date: Timestamp.now(), userId: user.uid, household: householdId, recurringId: r.id,
       });
     }
     setApplying(false);
@@ -59,13 +60,13 @@ export default function Recurring() {
   const aplicarUno = async (r) => {
     await addDoc(collection(db, "transactions"), {
       type: r.type, concept: r.concept, amount: Number(r.amount), category: r.category,
-      date: Timestamp.now(), userId: user.uid, household: "hogar_principal", recurringId: r.id,
+      date: Timestamp.now(), userId: user.uid, household: householdId, recurringId: r.id,
     });
   };
 
   const guardar = async () => {
     if (!form.concept || !form.amount) return;
-    await addDoc(collection(db, "recurring"), { ...form, amount: Number(form.amount), household: "hogar_principal" });
+    await addDoc(collection(db, "recurring"), { ...form, amount: Number(form.amount), household: householdId });
     setForm({ type: "expense", concept: "", amount: "", category: "Suscripciones" });
     setShowForm(false);
   };

@@ -19,7 +19,7 @@ const glass = {
   borderRadius: "20px",
 };
 
-export default function Dashboard() {
+export default function Dashboard({ householdId }) {
   const [transactions, setTransactions] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ type: "expense", concept: "", amount: "", category: "Otros" });
@@ -37,12 +37,13 @@ export default function Dashboard() {
   const añoActual = now.getFullYear();
 
   useEffect(() => {
-    const q = query(collection(db, "transactions"), where("household", "==", "hogar_principal"));
+    if (!householdId) return;
+    const q = query(collection(db, "transactions"), where("household", "==", householdId));
     const unsub = onSnapshot(q, (snap) => {
       setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return unsub;
-  }, []);
+  }, [householdId]);
 
   const transaccionesMes = transactions.filter(t => {
     const fecha = t.date?.toDate?.() || new Date(t.date);
@@ -59,31 +60,20 @@ export default function Dashboard() {
 
   const iniciarVoz = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert("Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.");
-      return;
-    }
+    if (!SpeechRecognition) { alert("Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge."); return; }
     const recognition = new SpeechRecognition();
     recognition.lang = "es-ES";
     recognition.continuous = false;
     recognition.interimResults = false;
-
     recognition.onstart = () => setEscuchando(true);
     recognition.onend = () => setEscuchando(false);
     recognition.onerror = () => setEscuchando(false);
-    recognition.onresult = (event) => {
-      const texto = event.results[0][0].transcript;
-      setTextoIA(texto);
-    };
-
+    recognition.onresult = (event) => { setTextoIA(event.results[0][0].transcript); };
     recognitionRef.current = recognition;
     recognition.start();
   };
 
-  const detenerVoz = () => {
-    recognitionRef.current?.stop();
-    setEscuchando(false);
-  };
+  const detenerVoz = () => { recognitionRef.current?.stop(); setEscuchando(false); };
 
   const analizarConIA = async () => {
     if (!textoIA.trim()) return;
@@ -104,7 +94,7 @@ export default function Dashboard() {
       await updateDoc(doc(db, "transactions", editingId), { type: form.type, concept: form.concept, amount: Number(form.amount), category: form.category });
       setEditingId(null);
     } else {
-      await addDoc(collection(db, "transactions"), { ...form, amount: Number(form.amount), date: Timestamp.now(), userId: user.uid, household: "hogar_principal" });
+      await addDoc(collection(db, "transactions"), { ...form, amount: Number(form.amount), date: Timestamp.now(), userId: user.uid, household: householdId });
     }
     setForm({ type: "expense", concept: "", amount: "", category: "Otros" });
     setSugerencia(null);
@@ -118,7 +108,6 @@ export default function Dashboard() {
     <div style={{ minHeight: "100vh" }}>
       <div style={{ maxWidth: "480px", margin: "0 auto", padding: "0 16px 140px 16px" }}>
 
-        {/* Header */}
         <div style={{ paddingTop: "28px", paddingBottom: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
             <div style={{ width: "32px", height: "32px", borderRadius: "10px", background: "linear-gradient(135deg, #6366f1, #06b6d4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -131,7 +120,6 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Input IA con voz */}
         <div style={{ ...glass, padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px", background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(6,182,212,0.05))", border: escuchando ? "1px solid rgba(251,113,133,0.5)" : "1px solid rgba(99,102,241,0.3)", transition: "border 0.3s" }}>
           <Sparkles size={17} color={escuchando ? "#fb7185" : "#6366f1"} style={{ flexShrink: 0 }} />
           <input
@@ -141,18 +129,10 @@ export default function Dashboard() {
             onKeyDown={e => e.key === "Enter" && analizarConIA()}
             style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#f1f5f9", fontSize: "14px" }}
           />
-
-          {/* Botón micrófono */}
-          <button
-            onClick={escuchando ? detenerVoz : iniciarVoz}
-            style={{
-              width: "32px", height: "32px", borderRadius: "8px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.2s",
-              background: escuchando ? "rgba(251,113,133,0.2)" : "rgba(255,255,255,0.06)",
-              boxShadow: escuchando ? "0 0 12px rgba(251,113,133,0.4)" : "none"
-            }}>
+          <button onClick={escuchando ? detenerVoz : iniciarVoz}
+            style={{ width: "32px", height: "32px", borderRadius: "8px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.2s", background: escuchando ? "rgba(251,113,133,0.2)" : "rgba(255,255,255,0.06)", boxShadow: escuchando ? "0 0 12px rgba(251,113,133,0.4)" : "none" }}>
             {escuchando ? <MicOff size={15} color="#fb7185" /> : <Mic size={15} color="#64748b" />}
           </button>
-
           {textoIA && !escuchando && (
             <button onClick={analizarConIA} disabled={loadingIA}
               style={{ background: "linear-gradient(135deg, #6366f1, #06b6d4)", color: "white", border: "none", borderRadius: "8px", padding: "6px 14px", fontSize: "12px", fontWeight: "600", cursor: "pointer", flexShrink: 0 }}>
@@ -161,7 +141,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Resumen 4 bloques */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
           {[
             { label: "Ingresos", value: ingresos, color: "#34d399", bg: "rgba(52,211,153,0.08)" },
@@ -176,7 +155,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Resultado neto */}
         <div style={{ ...glass, padding: "20px", textAlign: "center", marginBottom: "24px", background: neto >= 0 ? "linear-gradient(135deg, rgba(52,211,153,0.08), rgba(6,182,212,0.05))" : "linear-gradient(135deg, rgba(251,113,133,0.08), rgba(239,68,68,0.05))" }}>
           <p style={{ color: "#64748b", fontSize: "12px", fontWeight: "500", margin: "0 0 8px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>Resultado neto del mes</p>
           <p style={{ color: neto >= 0 ? "#34d399" : "#fb7185", fontSize: "38px", fontWeight: "800", margin: 0, letterSpacing: "-1px" }}>
@@ -184,7 +162,6 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Lista transacciones */}
         <p style={{ color: "#475569", fontSize: "11px", fontWeight: "600", letterSpacing: "0.08em", marginBottom: "12px", textTransform: "uppercase" }}>Este mes</p>
 
         {transaccionesMes.length === 0 && (
@@ -211,7 +188,6 @@ export default function Dashboard() {
                 </div>
                 <p style={{ color: tipo.color, fontWeight: "700", margin: 0, fontSize: "15px" }}>{Number(t.amount).toFixed(2)}€</p>
               </div>
-
               {selectedTransaction?.id === t.id && (
                 <div style={{ display: "flex", gap: "8px", padding: "8px 0 12px 0" }}>
                   <button onClick={() => editar(t)}
@@ -231,13 +207,11 @@ export default function Dashboard() {
         <p style={{ color: "#1e293b", fontSize: "11px", textAlign: "center", marginTop: "32px" }}>hecho por Nano</p>
       </div>
 
-      {/* Botón + flotante */}
       <button onClick={() => { setSugerencia(null); setEditingId(null); setForm({ type: "expense", concept: "", amount: "", category: "Otros" }); setShowForm(true); }}
         style={{ position: "fixed", bottom: "84px", right: "20px", width: "54px", height: "54px", borderRadius: "16px", background: "linear-gradient(135deg, #6366f1, #06b6d4)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 32px rgba(99,102,241,0.4)" }}>
         <Plus size={22} color="white" />
       </button>
 
-      {/* Modal formulario */}
       {showForm && (
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(2,6,23,0.8)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 200 }}>
           <div style={{ width: "100%", maxWidth: "480px", backgroundColor: "#0f172a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "28px 28px 0 0", padding: "24px" }}>
